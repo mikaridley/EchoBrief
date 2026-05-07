@@ -3,4 +3,5 @@ uvicorn[standard]
 pydantic-settings
 python-multipart
 python-docx
+openai
 
