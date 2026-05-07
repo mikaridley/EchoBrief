@@ -116,35 +116,48 @@ def _make_prompt(transcript: str) -> str:
         'You are an expert Executive Assistant and Meeting Analyst. Your goal is to extract high-value insights from meeting transcripts with 100% accuracy.\n'
         '\n'
         '### Task\n'
-        'Analyze the provided transcript and generate a structured summary, participant list, key decisions, and action items.\n'
+        'Analyze the provided transcript and return a structured summary, participants, decisions, and action items.\n'
         '\n'
         '### Language\n'
         f'The transcript language is: {language_name}.\n'
         f'You MUST write ALL JSON string values in {language_name}. Do NOT translate to any other language.\n'
         '\n'
-        '### Output Format\n'
-        'Return ONLY a valid JSON object. Do not include any conversational text, markdown blocks (like ```json), or explanations.\n'
+        '### Output Format (STRICT)\n'
+        'Output ONLY a valid JSON object and nothing else.\n'
+        'Do NOT include conversational text.\n'
+        'Do NOT use markdown or code fences (do NOT output ```json).\n'
+        'Do NOT add any extra top-level keys or nested keys beyond the schema.\n'
         '\n'
-        'Schema:\n'
+        'Schema (EXACT):\n'
         '{\n'
-        '  "summary": "A concise overview. It can be 2-3 sentences OR 3-5 bullet points (as a string).",\n'
-        '  "participants": ["Name or Role, or Anonymous Identifier (e.g., \'Speaker 1\')"],\n'
-        '  "decisions": ["Clear, specific outcomes or agreements reached"],\n'
-        '  "action_items": [\n'
-        '    {\n'
-        '      "task": "The specific task to be completed",\n'
-        '      "owner": "Name of the person responsible or null",\n'
-        '      "due": "Deadline mentioned or null"\n'
-        '    }\n'
-        '  ]\n'
+        '  "summary": string,\n'
+        '  "participants": string[],\n'
+        '  "decisions": string[],\n'
+        '  "action_items": [{"task": string, "owner": string|null, "due": string|null}]\n'
         '}\n'
         '\n'
-        '### Strict Rules\n'
-        '1. Language: The JSON values MUST be in the same language as the transcript. Never switch languages.\n'
-        '2. Participants: Identify participants from speaker labels or context. If names are missing but speaker labels exist, use identifiers like "Speaker 1". If truly unknown, use [].\n'
-        '3. Decisions: Only include confirmed decisions. Do not include suggestions that were rejected.\n'
-        '4. Action Items: Tasks must be actionable. If an owner is implied, assign it correctly.\n'
-        '5. Integrity: Never fabricate information. If a field has no data, return an empty list or null.\n'
+        '### Speaker Identification (NO GUESSING)\n'
+        'Participants MUST be derived ONLY from transcript speaker labels (active speakers).\n'
+        'Never infer or fabricate names from context.\n'
+        'If real names are not explicitly present as speaker labels, use placeholders exactly: "Speaker 1", "Speaker 2", etc.\n'
+        '\n'
+        '### Participant Filtering (CRITICAL)\n'
+        '"participants" must include ONLY people who actively speak in the transcript.\n'
+        'Do NOT include third parties that are only mentioned, referred to in third person, or teams/companies/departments.\n'
+        '\n'
+        '### Decisions\n'
+        '"decisions" must include only decisions explicitly made in the transcript. Otherwise return [].\n'
+        '\n'
+        '### Action Items (Ownership constraints)\n'
+        'Action items can ONLY be assigned to an active participant from the "participants" list.\n'
+        'If an action mentions a third party (e.g., "Talk to Rotem"), the owner MUST be the meeting participant responsible for contacting them, not the third party.\n'
+        'If no owner is explicitly assigned to an active participant, set "owner": null.\n'
+        'If no due date is explicitly stated, set "due": null.\n'
+        '\n'
+        '### Integrity checks (MUST satisfy)\n'
+        '- Every action_items[].owner is either null OR exactly one of "participants".\n'
+        '- "participants" contains only active speakers.\n'
+        '- Output JSON matches the schema exactly, with no extra keys.\n'
         '\n'
         '### Transcript\n'
         f'{transcript}\n'
@@ -187,6 +200,35 @@ def _parse_and_validate(payload_text: str) -> SummaryResult:
         action_items=action_items,
         model='',
         cached=False,
+    )
+
+
+def _enforce_speaker_only_participants(*, transcript: str, result: SummaryResult) -> SummaryResult:
+    """
+    Safety net against hallucinated participants / owners:
+    - participants can only be active speaker labels in the transcript
+    - action item owners can only be participants (else null)
+    """
+    speaker_labels = _infer_participants_from_transcript(transcript)
+    allowed = set(speaker_labels)
+
+    filtered_participants = [p for p in result.participants if p in allowed]
+    if not filtered_participants and speaker_labels:
+        filtered_participants = speaker_labels
+
+    filtered_allowed = set(filtered_participants)
+    cleaned_items: list[ActionItem] = []
+    for item in result.action_items:
+        owner = item.owner if (item.owner and item.owner in filtered_allowed) else None
+        cleaned_items.append(ActionItem(task=item.task, owner=owner, due=item.due))
+
+    return SummaryResult(
+        summary=result.summary,
+        participants=filtered_participants,
+        decisions=result.decisions,
+        action_items=cleaned_items,
+        model=result.model,
+        cached=result.cached,
     )
 
 
@@ -283,17 +325,7 @@ def summarize_transcript(
         rewritten_text = (rewrite_res.output_text or '').strip()
         parsed = _parse_and_validate(rewritten_text)
 
-    if not parsed.participants:
-        inferred = _infer_participants_from_transcript(transcript_clean)
-        if inferred:
-            parsed = SummaryResult(
-                summary=parsed.summary,
-                participants=inferred,
-                decisions=parsed.decisions,
-                action_items=parsed.action_items,
-                model=parsed.model,
-                cached=parsed.cached,
-            )
+    parsed = _enforce_speaker_only_participants(transcript=transcript_clean, result=parsed)
 
     cache_root.mkdir(parents=True, exist_ok=True)
     cache_root.joinpath(f'{h}.json').write_text(
