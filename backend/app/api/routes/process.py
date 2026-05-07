@@ -1,21 +1,33 @@
 import os
 import tempfile
+import time
+import json
+import hashlib
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from app.core.config import get_settings
-from app.schemas.meeting import ActionItem, ProcessResponse
+from ...core.config import get_settings
+from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
+from ...schemas.meeting import ActionItem, ProcessResponse
 
 
 router = APIRouter()
 
-ALLOWED_EXTS = {'.mp3', '.wav'}
+ALLOWED_EXTS = {'.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'}
+_recent_transcribe_calls: list[float] = []
+_recent_summarize_calls: list[float] = []
 
 
 @router.post('/process', response_model=ProcessResponse)
 async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
     settings = get_settings()
+
+    if settings.transcription_enabled and not settings.openai_api_key:
+        raise HTTPException(
+            status_code=500,
+            detail='Missing OPENAI_API_KEY. Set it in backend/.env',
+        )
 
     suffix = Path(file.filename or '').suffix.lower()
     if suffix not in ALLOWED_EXTS:
@@ -26,6 +38,7 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
 
     total = 0
     temp_path: str | None = None
+    sha = hashlib.sha256()
 
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -40,19 +53,158 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
                         status_code=413,
                         detail=f'File too large. Max is {settings.max_upload_mb}MB',
                     )
+                sha.update(chunk)
                 tmp.write(chunk)
 
+        file_hash = sha.hexdigest()
+        cache_dir = Path(settings.transcription_cache_dir)
+        cache_path = cache_dir / f'{file_hash}.json'
+        if cache_path.exists():
+            cached = json.loads(cache_path.read_text(encoding='utf-8'))
+            tr_text = (cached.get('transcript') or '').strip()
+            if tr_text:
+                return ProcessResponse(
+                    transcript=tr_text,
+                    summary='(stub) Summary will be produced in Phase 3 (LLM).',
+                    participants=['Alice', 'Bob'],
+                    decisions=['Use FastAPI backend skeleton for Phase 1'],
+                    action_items=[
+                        ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
+                        ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
+                    ],
+                    language=cached.get('language'),
+                    meta={
+                        'duration_sec': None,
+                        'model_versions': {'whisper': cached.get('model'), 'llm': None},
+                        'cached': True,
+                    },
+                )
+
+        if not settings.transcription_enabled:
+            return ProcessResponse(
+                transcript='(dev) Transcription disabled (TRANSCRIPTION_ENABLED=0).',
+                summary='(stub) Summary will be produced in Phase 3 (LLM).',
+                participants=['Alice', 'Bob'],
+                decisions=['Use FastAPI backend skeleton for Phase 1'],
+                action_items=[
+                    ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
+                    ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
+                ],
+                language=None,
+                meta={'duration_sec': None, 'model_versions': {'whisper': None, 'llm': None}},
+            )
+
+        # Best-effort dev rate limit (prevents accidental spamming)
+        now = time.time()
+        cutoff = now - 60
+        while _recent_transcribe_calls and _recent_transcribe_calls[0] < cutoff:
+            _recent_transcribe_calls.pop(0)
+        if len(_recent_transcribe_calls) >= settings.transcription_max_calls_per_min:
+            raise HTTPException(
+                status_code=429,
+                detail='Local dev rate limit hit. Wait a minute or increase TRANSCRIPTION_MAX_CALLS_PER_MIN',
+            )
+        _recent_transcribe_calls.append(now)
+
+        try:
+            tr = transcribe_audio(
+                file_path=temp_path,
+                filename=file.filename,
+                max_bytes=settings.max_upload_bytes,
+                openai_api_key=settings.openai_api_key,
+                model=settings.openai_whisper_model,
+                timeout_sec=settings.openai_timeout_sec,
+            )
+        except TranscriptionError as e:
+            if e.code == 'unsupported_format':
+                raise HTTPException(status_code=400, detail=str(e)) from e
+            if e.code == 'file_too_large':
+                raise HTTPException(
+                    status_code=413,
+                    detail=f'File too large. Max is {settings.max_upload_mb}MB',
+                ) from e
+            if e.code == 'timeout':
+                raise HTTPException(status_code=504, detail=str(e)) from e
+            if e.code == 'auth_failed':
+                raise HTTPException(
+                    status_code=502,
+                    detail=f'{str(e)}. Check OPENAI_API_KEY',
+                ) from e
+            if e.code == 'rate_limited':
+                if e.provider_message:
+                    raise HTTPException(status_code=429, detail=e.provider_message) from e
+                raise HTTPException(status_code=429, detail=str(e)) from e
+            if e.provider_message is not None:
+                raise HTTPException(status_code=502, detail=e.provider_message or str(e)) from e
+            raise HTTPException(status_code=502, detail=f'{e.code}: {str(e)}') from e
+
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(
+                {'transcript': tr.transcript, 'language': tr.language, 'model': tr.model},
+                ensure_ascii=False,
+            ),
+            encoding='utf-8',
+        )
+
+        summary = '(stub) Summary will be produced in Phase 3 (LLM).'
+        participants: list[str] = ['Alice', 'Bob']
+        decisions: list[str] = ['Use FastAPI backend skeleton for Phase 1']
+        action_items: list[ActionItem] = [
+            ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
+            ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
+        ]
+        summarize_cached = False
+        summarize_model: str | None = None
+
+        if settings.summarization_enabled:
+            if not settings.openai_api_key:
+                raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY for summarization')
+
+            # Best-effort dev rate limit
+            now = time.time()
+            cutoff = now - 60
+            while _recent_summarize_calls and _recent_summarize_calls[0] < cutoff:
+                _recent_summarize_calls.pop(0)
+            if len(_recent_summarize_calls) >= settings.summarization_max_calls_per_min:
+                raise HTTPException(
+                    status_code=429,
+                    detail='Local dev summarize rate limit hit. Wait a minute or increase SUMMARIZATION_MAX_CALLS_PER_MIN',
+                )
+            _recent_summarize_calls.append(now)
+
+            try:
+                sr = summarize_transcript(
+                    transcript=tr.transcript,
+                    openai_api_key=settings.openai_api_key,
+                    model=settings.openai_summarize_model,
+                    timeout_sec=settings.openai_timeout_sec,
+                    cache_dir=settings.summarization_cache_dir,
+                    max_calls_per_min=settings.summarization_max_calls_per_min,
+                )
+                summary = sr.summary
+                participants = sr.participants
+                decisions = sr.decisions
+                action_items = sr.action_items
+                summarize_cached = sr.cached
+                summarize_model = sr.model
+            except SummarizationError as e:
+                if e.code == 'local_rate_limited':
+                    raise HTTPException(status_code=429, detail=str(e)) from e
+                raise HTTPException(status_code=502, detail=f'summarization_failed: {str(e)}') from e
+
         return ProcessResponse(
-            transcript='(stub) Transcript will be produced in Phase 2 (Whisper).',
-            summary='(stub) Summary will be produced in Phase 3 (LLM).',
-            participants=['Alice', 'Bob'],
-            decisions=['Use FastAPI backend skeleton for Phase 1'],
-            action_items=[
-                ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
-                ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
-            ],
-            language='en',
-            meta={'duration_sec': None, 'model_versions': {'whisper': None, 'llm': None}},
+            transcript=tr.transcript,
+            summary=summary,
+            participants=participants,
+            decisions=decisions,
+            action_items=action_items,
+            language=tr.language,
+            meta={
+                'duration_sec': None,
+                'model_versions': {'whisper': tr.model, 'llm': summarize_model},
+                'cached': summarize_cached,
+            },
         )
     finally:
         try:
