@@ -52,14 +52,75 @@ def _infer_participants_from_transcript(transcript: str) -> list[str]:
     return found
 
 
+def _guess_language_name(text: str) -> str:
+    """
+    Very small heuristic to reduce language-mismatch.
+    We only need a "best guess" to push the model harder.
+    """
+    s = (text or '').lower()
+    if not s:
+        return 'English'
+
+    es_hits = 0
+    for w in (' el ', ' la ', ' los ', ' las ', ' de ', ' y ', ' que ', ' se ', ' por ', ' para ', ' con ', ' una '):
+        if w in f' {s} ':
+            es_hits += 1
+
+    en_hits = 0
+    for w in (' the ', ' and ', ' to ', ' of ', ' we ', ' you ', ' i ', ' is ', ' are ', ' for ', ' with '):
+        if w in f' {s} ':
+            en_hits += 1
+
+    if es_hits >= en_hits + 2:
+        return 'Spanish'
+    return 'English'
+
+
+def _is_spanish_like(text: str) -> bool:
+    s = (text or '').lower()
+    if not s:
+        return False
+    return any(w in f' {s} ' for w in (' el ', ' la ', ' los ', ' las ', ' de ', ' y ', ' que ', ' se '))
+
+
+def _is_english_like(text: str) -> bool:
+    s = (text or '').lower()
+    if not s:
+        return False
+    return any(w in f' {s} ' for w in (' the ', ' and ', ' to ', ' of ', ' we ', ' you ', ' is ', ' are '))
+
+
+def _language_mismatch(*, transcript: str, result: SummaryResult) -> bool:
+    transcript_lang = _guess_language_name(transcript)
+    blob = ' '.join(
+        [
+            result.summary,
+            ' '.join(result.decisions),
+            ' '.join(i.task for i in result.action_items),
+            ' '.join((i.due or '') for i in result.action_items),
+        ]
+    )
+
+    if transcript_lang == 'English':
+        return _is_spanish_like(blob) and _is_english_like(transcript)  # clear mismatch
+    if transcript_lang == 'Spanish':
+        return _is_english_like(blob) and _is_spanish_like(transcript)  # clear mismatch
+    return False
+
+
 def _make_prompt(transcript: str) -> str:
     # Keep this prompt in sync with plan/003-phase-3-plan-with-prompt.md
+    language_name = _guess_language_name(transcript)
     return (
         '### Role\n'
         'You are an expert Executive Assistant and Meeting Analyst. Your goal is to extract high-value insights from meeting transcripts with 100% accuracy.\n'
         '\n'
         '### Task\n'
         'Analyze the provided transcript and generate a structured summary, participant list, key decisions, and action items.\n'
+        '\n'
+        '### Language\n'
+        f'The transcript language is: {language_name}.\n'
+        f'You MUST write ALL JSON string values in {language_name}. Do NOT translate to any other language.\n'
         '\n'
         '### Output Format\n'
         'Return ONLY a valid JSON object. Do not include any conversational text, markdown blocks (like ```json), or explanations.\n'
@@ -79,7 +140,7 @@ def _make_prompt(transcript: str) -> str:
         '}\n'
         '\n'
         '### Strict Rules\n'
-        '1. Language: The JSON values MUST be in the same language as the transcript.\n'
+        '1. Language: The JSON values MUST be in the same language as the transcript. Never switch languages.\n'
         '2. Participants: Identify participants from speaker labels or context. If names are missing but speaker labels exist, use identifiers like "Speaker 1". If truly unknown, use [].\n'
         '3. Decisions: Only include confirmed decisions. Do not include suggestions that were rejected.\n'
         '4. Action Items: Tasks must be actionable. If an owner is implied, assign it correctly.\n'
@@ -158,14 +219,17 @@ def summarize_transcript(
         except SummarizationError:
             cache_path.unlink(missing_ok=True)
         else:
-            return SummaryResult(
-                summary=result.summary,
-                participants=result.participants,
-                decisions=result.decisions,
-                action_items=result.action_items,
-                model=str(cached.get('model') or model),
-                cached=True,
-            )
+            if _language_mismatch(transcript=transcript_clean, result=result):
+                cache_path.unlink(missing_ok=True)
+            else:
+                return SummaryResult(
+                    summary=result.summary,
+                    participants=result.participants,
+                    decisions=result.decisions,
+                    action_items=result.action_items,
+                    model=str(cached.get('model') or model),
+                    cached=True,
+                )
 
     now = time.time()
     cutoff = now - 60
@@ -203,6 +267,21 @@ def summarize_transcript(
         )
         fixed_text = (fix_res.output_text or '').strip()
         parsed = _parse_and_validate(fixed_text)
+
+    if _language_mismatch(transcript=transcript_clean, result=parsed):
+        language_name = _guess_language_name(transcript_clean)
+        rewrite_res = client.responses.create(
+            model=model,
+            input=(
+                f'Rewrite the following JSON so that ALL string values are in {language_name}.\n'
+                'Keep the exact same JSON keys and structure.\n'
+                'Return ONLY valid JSON.\n\n'
+                f'JSON:\n{json.dumps(parsed.model_dump(), ensure_ascii=False)}\n'
+            ),
+            store=False,
+        )
+        rewritten_text = (rewrite_res.output_text or '').strip()
+        parsed = _parse_and_validate(rewritten_text)
 
     if not parsed.participants:
         inferred = _infer_participants_from_transcript(transcript_clean)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routes import docx, health, openai_test, process
+from .api.routes import docx, health, openai_test, process, summarize
 from .core.config import get_settings
 
 
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix='/api', tags=['health'])
     app.include_router(process.router, prefix='/api', tags=['process'])
+    app.include_router(summarize.router, prefix='/api', tags=['summarize'])
     app.include_router(docx.router, prefix='/api', tags=['docx'])
     app.include_router(openai_test.router, prefix='/api', tags=['openai'])
 
