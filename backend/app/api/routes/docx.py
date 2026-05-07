@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.schemas.meeting import DocxRequest
-from app.services.docx import build_docx_bytes
+from ...schemas.meeting import DocxRequest
+from ...services.docx import build_docx_bytes
 
 
 router = APIRouter()

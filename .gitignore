@@ -38,6 +38,9 @@ build/
 logs/
 *.log
 
+# App caches
+backend/.cache/
+
 # OS / editor
 .DS_Store
 Thumbs.db

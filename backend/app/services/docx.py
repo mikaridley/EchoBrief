@@ -2,7 +2,7 @@ from io import BytesIO
 
 from docx import Document
 
-from app.schemas.meeting import DocxRequest
+from ..schemas.meeting import DocxRequest
 
 
 def build_docx_bytes(result: DocxRequest) -> bytes:

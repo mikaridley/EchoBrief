@@ -16,6 +16,7 @@ class Meta(BaseModel):
     duration_sec: float | None = None
     model_versions: MetaModelVersions | None = None
     cached: bool | None = None
+    cached_summary: bool | None = None
 
 
 class ProcessResponse(BaseModel):

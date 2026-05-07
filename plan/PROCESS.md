@@ -233,3 +233,5 @@ Assignment asks “how long it took in practice”.
 3) Sent to Whisper API for transcription 
 4) Text passed to LLM with a structured System Prompt 
 5) Processed JSON returned to Frontend  -->
+
+<!-- how to avoid many api calls as we develope? Caching, Local dev rate limit: -->

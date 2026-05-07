@@ -23,7 +23,7 @@ _recent_summarize_calls: list[float] = []
 async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
     settings = get_settings()
 
-    if settings.transcription_enabled and not settings.openai_api_key:
+    if (settings.transcription_enabled or settings.summarization_enabled) and not settings.openai_api_key:
         raise HTTPException(
             status_code=500,
             detail='Missing OPENAI_API_KEY. Set it in backend/.env',
@@ -63,20 +63,50 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
             cached = json.loads(cache_path.read_text(encoding='utf-8'))
             tr_text = (cached.get('transcript') or '').strip()
             if tr_text:
+                summary = '(stub) Summary will be produced in Phase 3 (LLM).'
+                participants: list[str] = ['Alice', 'Bob']
+                decisions: list[str] = ['Use FastAPI backend skeleton for Phase 1']
+                action_items: list[ActionItem] = [
+                    ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
+                    ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
+                ]
+
+                summarize_cached = False
+                summarize_model: str | None = None
+
+                if settings.summarization_enabled:
+                    try:
+                        sr = summarize_transcript(
+                            transcript=tr_text,
+                            openai_api_key=settings.openai_api_key,
+                            model=settings.openai_summarize_model,
+                            timeout_sec=settings.openai_timeout_sec,
+                            cache_dir=settings.summarization_cache_dir,
+                            max_calls_per_min=settings.summarization_max_calls_per_min,
+                        )
+                        summary = sr.summary
+                        participants = sr.participants
+                        decisions = sr.decisions
+                        action_items = sr.action_items
+                        summarize_cached = sr.cached
+                        summarize_model = sr.model
+                    except SummarizationError as e:
+                        if e.code == 'local_rate_limited':
+                            raise HTTPException(status_code=429, detail=str(e)) from e
+                        raise HTTPException(status_code=502, detail=f'summarization_failed: {str(e)}') from e
+
                 return ProcessResponse(
                     transcript=tr_text,
-                    summary='(stub) Summary will be produced in Phase 3 (LLM).',
-                    participants=['Alice', 'Bob'],
-                    decisions=['Use FastAPI backend skeleton for Phase 1'],
-                    action_items=[
-                        ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
-                        ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
-                    ],
+                    summary=summary,
+                    participants=participants,
+                    decisions=decisions,
+                    action_items=action_items,
                     language=cached.get('language'),
                     meta={
                         'duration_sec': None,
-                        'model_versions': {'whisper': cached.get('model'), 'llm': None},
+                        'model_versions': {'whisper': cached.get('model'), 'llm': summarize_model},
                         'cached': True,
+                        'cached_summary': summarize_cached,
                     },
                 )
 
@@ -203,7 +233,8 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
             meta={
                 'duration_sec': None,
                 'model_versions': {'whisper': tr.model, 'llm': summarize_model},
-                'cached': summarize_cached,
+                'cached': False,
+                'cached_summary': summarize_cached,
             },
         )
     finally:
