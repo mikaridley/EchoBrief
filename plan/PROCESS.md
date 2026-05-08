@@ -235,3 +235,54 @@ Assignment asks “how long it took in practice”.
 5) Processed JSON returned to Frontend  -->
 
 <!-- how to avoid many api calls as we develope? Caching, Local dev rate limit: -->
+
+<!-- front prompt:
+Role: Expert React & Frontend Architect
+
+Task: Initialize a React frontend using Vite and set up a specific, modular folder architecture.
+
+Core Technology Stack:
+
+Framework: React (Vite)
+
+Styling: Modular CSS (following the provided directory structure)
+
+Directory Structure Requirements:
+Create the following folder hierarchy exactly as specified. Ensure empty directories contain a .gitkeep if necessary to maintain the structure:
+
+Plaintext
+src/
+├── assets/
+│   ├── fonts/
+│   ├── imgs/
+│   └── styles/
+│       ├── basics/
+│       │   ├── base.css
+│       │   └── layout.css
+│       ├── cmps/
+│       ├── pages/
+│       ├── setup/
+│       │   ├── _mq.css
+│       │   ├── _typography.css
+│       │   └── _variables.css
+│       └── main.css
+├── cmps/
+├── config/
+├── pages/
+├── services/
+├── utils/
+├── index.jsx
+└── RootCmp.jsx
+Implementation Instructions:
+
+Styles Entry Point: In main.css, import all files from setup/, basics/, cmps/, and pages/ to ensure a single source of truth for styles.
+
+Component Architecture: Move the main logic from the default App.jsx into RootCmp.jsx.
+
+Clean Up: Remove the default Vite App.css and index.css.
+
+Modern Syntax: Use functional components with hooks and export them as defaults.
+
+Asset Integrity: Ensure the assets/ subfolders for fonts and imgs are created and ready for assets.
+
+Context: I am implementing a design provided via Figma. The code should be clean, semantic, and ready for high-fidelity UI implementation. -->
