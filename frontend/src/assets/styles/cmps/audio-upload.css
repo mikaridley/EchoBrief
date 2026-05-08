@@ -7,6 +7,18 @@
   border-radius: 1rem;
   background: var(--sec-bg);
 
+  &.has-result {
+    .audio-upload__header {
+      display: none;
+    }
+
+    .audio-upload__result {
+      margin-block-start: 0;
+      padding-block-start: 0;
+      border-top: none;
+    }
+  }
+
   .audio-upload__header {
     .audio-upload__title {
       font-weight: 600;

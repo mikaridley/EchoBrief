@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UploadCloud, X } from 'lucide-react'
 import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
+import { AudioUploadResult } from './AudioUploadResult.jsx'
 
 const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 
@@ -109,7 +110,7 @@ export function AudioUpload() {
   }
 
   return (
-    <section className="audio-upload" aria-label="Upload meeting audio">
+    <section className={`audio-upload ${result ? 'has-result' : ''}`} aria-label="Upload meeting audio">
       <header className="audio-upload__header">
         <h2 className="audio-upload__title">Upload a meeting recording</h2>
       </header>
@@ -176,30 +177,14 @@ export function AudioUpload() {
         </>
       )}
 
-      {result && (
-        <section className="audio-upload__result" aria-label="Backend result">
-          <h3 className="audio-upload__result-title">Result</h3>
-
-          <footer className="audio-upload__actions">
-            <button className="audio-upload__btn" type="button" onClick={onUploadNew} disabled={isUploading || isDownloading}>
-              Upload new
-            </button>
-
-            <button className="audio-upload__btn" type="button" onClick={onDownloadDocx} disabled={isDownloading}>
-              {isDownloading ? 'Preparing…' : 'Download .docx'}
-            </button>
-
-            <div className="audio-upload__status" aria-live="polite">
-              {error && <p className="audio-upload__error">{error}</p>}
-            </div>
-          </footer>
-
-          <div className="audio-upload__result-block">
-            <h4 className="audio-upload__result-label">Backend response</h4>
-            <pre className="audio-upload__result-text">{JSON.stringify(result, null, 2)}</pre>
-          </div>
-        </section>
-      )}
+      <AudioUploadResult
+        result={result}
+        error={error}
+        isUploading={isUploading}
+        isDownloading={isDownloading}
+        onUploadNew={onUploadNew}
+        onDownloadDocx={onDownloadDocx}
+      />
     </section>
   )
 }
