@@ -1,28 +1,17 @@
 :root {
-  --clr-bg: hsl(0 0% 100%);
-  --clr-surface: hsl(0 0% 100%);
-  --clr-text: hsl(222 47% 11%);
-  --clr-muted: hsl(215 16% 47%);
-  --clr-border: hsl(214 32% 91%);
+  --prime-bg: #FDF7F5;
+  --sec-bg: #FFFFFF;
+  --prime-text: #262626;
+  --sec-text: #5E5E5E;
+  --light-text: #FFFFFF;
+  --prime-accent-300: #F9F2EF;
+  --prime-accent-500: #F3E0DE;
+  --prime-accent-700: #E8ADAD;
 
-  --clr-primary: hsl(221 83% 53%);
-  --clr-primary-contrast: hsl(0 0% 100%);
-
-  --radius-1: 0.75rem;
-  --shadow-1: 0 0.625rem 1.875rem hsl(222 47% 11% / 0.08);
-
-  --max-width: 68rem;
+  --screen-width: 354px;
+  --sides-margin: 1.5rem;
 }
 
-[data-theme='dark'] {
-  --clr-bg: hsl(222 47% 11%);
-  --clr-surface: hsl(222 47% 13%);
-  --clr-text: hsl(210 40% 98%);
-  --clr-muted: hsl(215 20% 65%);
-  --clr-border: hsl(217 33% 17%);
+@media (prefers-color-scheme: dark){}
 
-  --clr-primary: hsl(217 91% 60%);
-  --clr-primary-contrast: hsl(222 47% 11%);
-
-  --shadow-1: 0 0.625rem 1.875rem hsl(0 0% 0% / 0.35);
-}
+@media (prefers-reduced-motion: reduce) {}
