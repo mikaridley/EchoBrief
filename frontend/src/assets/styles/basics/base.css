@@ -14,7 +14,6 @@ html {
 body {
   margin: 0;
   overflow-x: clip;
-  background: var(--prime-bg);
   color: var(--prime-text);
 }
 
@@ -74,9 +73,13 @@ button {
 }
 
 .main-btn {
+  display: inline-flex;
+  align-items: center;
 }
 
 .secondary-btn {
+  display: inline-flex;
+  align-items: center;
 }
 
 ::-webkit-scrollbar {

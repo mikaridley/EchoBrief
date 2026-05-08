@@ -1,8 +1,9 @@
 :root {
   --prime-bg: #FDF7F5;
   --sec-bg: #FFFFFF;
-  --prime-text: #262626;
-  --light-text: #FFFFFF;
+  --prime-text: #dee2ea;
+
+  --prime-bg: url('../../imgs/background.png');
 
   --brand-one:#1970FB;
   --brand-two:#7636ED;
