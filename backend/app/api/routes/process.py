@@ -1,3 +1,5 @@
+"""HTTP route for audio upload -> transcription (and optional summarization)."""
+
 import os
 import tempfile
 import time
@@ -6,6 +8,7 @@ import hashlib
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from ...core.config import get_settings
 from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
@@ -16,7 +19,23 @@ router = APIRouter()
 
 ALLOWED_EXTS = {'.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'}
 _recent_transcribe_calls: list[float] = []
-_recent_summarize_calls: list[float] = []
+
+
+def _backend_root_dir() -> Path:
+    # .../backend/app/api/routes/process.py -> .../backend
+    return Path(__file__).resolve().parents[3]
+
+
+def _resolve_cache_dir(cache_dir: str) -> Path:
+    p = Path(cache_dir)
+    if p.is_absolute():
+        return p
+
+    parts = list(p.parts)
+    if parts and parts[0].lower() == 'backend':
+        parts = parts[1:]
+
+    return _backend_root_dir() / Path(*parts)
 
 
 @router.post('/process', response_model=ProcessResponse)
@@ -57,32 +76,32 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
                 tmp.write(chunk)
 
         file_hash = sha.hexdigest()
-        cache_dir = Path(settings.transcription_cache_dir)
+        cache_dir = _resolve_cache_dir(settings.transcription_cache_dir)
         cache_path = cache_dir / f'{file_hash}.json'
         if cache_path.exists():
             cached = json.loads(cache_path.read_text(encoding='utf-8'))
             tr_text = (cached.get('transcript') or '').strip()
             if tr_text:
-                summary = '(stub) Summary will be produced in Phase 3 (LLM).'
-                participants: list[str] = ['Alice', 'Bob']
-                decisions: list[str] = ['Use FastAPI backend skeleton for Phase 1']
-                action_items: list[ActionItem] = [
-                    ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
-                    ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
-                ]
-
+                summary = ''
+                participants: list[str] = []
+                decisions: list[str] = []
+                action_items: list[ActionItem] = []
                 summarize_cached = False
                 summarize_model: str | None = None
 
                 if settings.summarization_enabled:
                     try:
-                        sr = summarize_transcript(
+                        sr = await run_in_threadpool(
+                            summarize_transcript,
                             transcript=tr_text,
                             openai_api_key=settings.openai_api_key,
                             model=settings.openai_summarize_model,
                             timeout_sec=settings.openai_timeout_sec,
                             cache_dir=settings.summarization_cache_dir,
                             max_calls_per_min=settings.summarization_max_calls_per_min,
+                            prompt_version=settings.summarization_prompt_version,
+                            retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
+                            rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
                         )
                         summary = sr.summary
                         participants = sr.participants
@@ -97,7 +116,7 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
 
                 return ProcessResponse(
                     transcript=tr_text,
-                    summary=summary,
+                    summary=summary or '(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
                     participants=participants,
                     decisions=decisions,
                     action_items=action_items,
@@ -113,13 +132,10 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
         if not settings.transcription_enabled:
             return ProcessResponse(
                 transcript='(dev) Transcription disabled (TRANSCRIPTION_ENABLED=0).',
-                summary='(stub) Summary will be produced in Phase 3 (LLM).',
-                participants=['Alice', 'Bob'],
-                decisions=['Use FastAPI backend skeleton for Phase 1'],
-                action_items=[
-                    ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
-                    ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
-                ],
+                summary='(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
+                participants=[],
+                decisions=[],
+                action_items=[],
                 language=None,
                 meta={'duration_sec': None, 'model_versions': {'whisper': None, 'llm': None}},
             )
@@ -137,7 +153,8 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
         _recent_transcribe_calls.append(now)
 
         try:
-            tr = transcribe_audio(
+            tr = await run_in_threadpool(
+                transcribe_audio,
                 file_path=temp_path,
                 filename=file.filename,
                 max_bytes=settings.max_upload_bytes,
@@ -177,13 +194,10 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
             encoding='utf-8',
         )
 
-        summary = '(stub) Summary will be produced in Phase 3 (LLM).'
-        participants: list[str] = ['Alice', 'Bob']
-        decisions: list[str] = ['Use FastAPI backend skeleton for Phase 1']
-        action_items: list[ActionItem] = [
-            ActionItem(task='Implement Whisper transcription service', owner='Backend', due=None),
-            ActionItem(task='Implement LLM summarization service', owner='Backend', due=None),
-        ]
+        summary = ''
+        participants: list[str] = []
+        decisions: list[str] = []
+        action_items: list[ActionItem] = []
         summarize_cached = False
         summarize_model: str | None = None
 
@@ -191,26 +205,18 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
             if not settings.openai_api_key:
                 raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY for summarization')
 
-            # Best-effort dev rate limit
-            now = time.time()
-            cutoff = now - 60
-            while _recent_summarize_calls and _recent_summarize_calls[0] < cutoff:
-                _recent_summarize_calls.pop(0)
-            if len(_recent_summarize_calls) >= settings.summarization_max_calls_per_min:
-                raise HTTPException(
-                    status_code=429,
-                    detail='Local dev summarize rate limit hit. Wait a minute or increase SUMMARIZATION_MAX_CALLS_PER_MIN',
-                )
-            _recent_summarize_calls.append(now)
-
             try:
-                sr = summarize_transcript(
+                sr = await run_in_threadpool(
+                    summarize_transcript,
                     transcript=tr.transcript,
                     openai_api_key=settings.openai_api_key,
                     model=settings.openai_summarize_model,
                     timeout_sec=settings.openai_timeout_sec,
                     cache_dir=settings.summarization_cache_dir,
                     max_calls_per_min=settings.summarization_max_calls_per_min,
+                    prompt_version=settings.summarization_prompt_version,
+                    retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
+                    rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
                 )
                 summary = sr.summary
                 participants = sr.participants
@@ -225,7 +231,7 @@ async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
 
         return ProcessResponse(
             transcript=tr.transcript,
-            summary=summary,
+            summary=summary or '(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
             participants=participants,
             decisions=decisions,
             action_items=action_items,

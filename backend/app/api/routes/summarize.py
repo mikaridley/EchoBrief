@@ -1,5 +1,8 @@
+"""HTTP route for text-only summarization."""
+
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
+from fastapi.concurrency import run_in_threadpool
 
 from ...core.config import get_settings
 from ...schemas.meeting import ProcessResponse
@@ -35,13 +38,17 @@ async def summarize_text(payload: SummarizeRequest) -> ProcessResponse:
         )
 
     try:
-        sr = summarize_transcript(
+        sr = await run_in_threadpool(
+            summarize_transcript,
             transcript=payload.transcript,
             openai_api_key=settings.openai_api_key,
             model=settings.openai_summarize_model,
             timeout_sec=settings.openai_timeout_sec,
             cache_dir=settings.summarization_cache_dir,
             max_calls_per_min=settings.summarization_max_calls_per_min,
+            prompt_version=settings.summarization_prompt_version,
+            retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
+            rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
         )
     except SummarizationError as e:
         if e.code == 'local_rate_limited':
@@ -58,7 +65,7 @@ async def summarize_text(payload: SummarizeRequest) -> ProcessResponse:
         meta={
             'duration_sec': None,
             'model_versions': {'whisper': None, 'llm': sr.model},
-            'cached': None,
+            'cached': sr.cached,
             'cached_summary': sr.cached,
         },
     )

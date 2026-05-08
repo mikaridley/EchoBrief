@@ -1,3 +1,5 @@
+"""App configuration (environment variables + defaults)."""
+
 from functools import lru_cache
 
 from pydantic import Field
@@ -37,6 +39,20 @@ class Settings(BaseSettings):
         default=10,
         validation_alias='SUMMARIZATION_MAX_CALLS_PER_MIN',
     )
+    summarization_retry_on_invalid_json: bool = Field(
+        default=False,
+        validation_alias='SUMMARIZATION_RETRY_ON_INVALID_JSON',
+    )
+    summarization_rewrite_on_language_mismatch: bool = Field(
+        default=False,
+        validation_alias='SUMMARIZATION_REWRITE_ON_LANGUAGE_MISMATCH',
+    )
+    summarization_prompt_version: str = Field(
+        default='2026-05-07-1',
+        validation_alias='SUMMARIZATION_PROMPT_VERSION',
+    )
+
+    openai_test_enabled: bool = Field(default=False, validation_alias='OPENAI_TEST_ENABLED')
 
     @property
     def cors_origins_list(self) -> list[str]:

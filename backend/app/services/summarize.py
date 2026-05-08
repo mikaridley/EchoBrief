@@ -1,8 +1,20 @@
+"""
+LLM transcript summarization service.
+
+Cost constraint (project requirement):
+- Default behavior is **one provider call per cache miss**.
+- Extra calls (JSON-fix retry, language rewrite) are opt-in via flags.
+
+This module also implements a best-effort on-disk cache to prevent repeated paid calls
+for identical inputs.
+"""
+
 import hashlib
 import json
-import re
+import tempfile
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from openai import OpenAI
@@ -12,6 +24,8 @@ from ..schemas.meeting import ActionItem
 
 
 _recent_summarize_calls: list[float] = []
+
+_DEFAULT_PROMPT_VERSION = '2026-05-08-3'
 
 
 @dataclass(frozen=True)
@@ -30,26 +44,31 @@ class SummarizationError(Exception):
         self.code = code
 
 
-def _infer_participants_from_transcript(transcript: str) -> list[str]:
-    # Prefer explicit speaker labels when present (e.g. "Speaker 1:", "SPEAKER_00:", etc.)
-    patterns = [
-        r'^\s*(Speaker\s*\d+)\s*:',
-        r'^\s*(SPEAKER[_\s-]*\d+)\s*:',
-    ]
+def _backend_root_dir() -> Path:
+    # .../backend/app/services/summarize.py -> .../backend
+    return Path(__file__).resolve().parents[2]
 
-    found: list[str] = []
-    for pat in patterns:
-        for m in re.finditer(pat, transcript, flags=re.MULTILINE | re.IGNORECASE):
-            label = (m.group(1) or '').strip()
-            if not label:
-                continue
-            normalized = re.sub(r'\s+', ' ', label)
-            normalized = normalized.upper().replace('SPEAKER_', 'SPEAKER ')
-            normalized = normalized.title() if normalized.lower().startswith('speaker ') else normalized
-            if normalized not in found:
-                found.append(normalized)
 
-    return found
+def _resolve_cache_dir(cache_dir: str | Path) -> Path:
+    p = Path(cache_dir)
+    if p.is_absolute():
+        return p
+
+    parts = list(p.parts)
+    if parts and parts[0].lower() == 'backend':
+        parts = parts[1:]
+
+    return _backend_root_dir() / Path(*parts)
+
+
+def _normalize_transcript_for_cache(transcript: str) -> str:
+    # Conservative normalization: stable hash without changing content meaning.
+    # - unify line endings
+    # - trim trailing whitespace
+    # - trim surrounding whitespace
+    t = (transcript or '').replace('\r\n', '\n').replace('\r', '\n')
+    t = '\n'.join(line.rstrip() for line in t.split('\n'))
+    return t.strip()
 
 
 def _guess_language_name(text: str) -> str:
@@ -136,32 +155,109 @@ def _make_prompt(transcript: str) -> str:
         '  "action_items": [{"task": string, "owner": string|null, "due": string|null}]\n'
         '}\n'
         '\n'
-        '### Speaker Identification (NO GUESSING)\n'
-        'Participants MUST be derived ONLY from transcript speaker labels (active speakers).\n'
-        'Never infer or fabricate names from context.\n'
-        'If real names are not explicitly present as speaker labels, use placeholders exactly: "Speaker 1", "Speaker 2", etc.\n'
+        '### Speaker Identification\n'
+        'First, estimate how many distinct people ACTIVELY SPEAK in the transcript (using conversational cues like turn-taking, "I" vs "you", first-person statements, agreements, questions, etc.).\n'
+        'Then label each active speaker:\n'
+        '- Use a real name ONLY when the speaker is self-introduced (e.g. "Hi, I\'m Tom") OR strongly implied by context (e.g. directly addressed by name and they reply, or clearly the narrator/host of the recording).\n'
+        '- Otherwise use placeholders in first-speak order: "Speaker 1", "Speaker 2", "Speaker 3", ...\n'
+        'If the transcript has any content, "participants" MUST contain at least one item (there is always at least one speaker).\n'
         '\n'
         '### Participant Filtering (CRITICAL)\n'
         '"participants" must include ONLY people who actively speak in the transcript.\n'
         'Do NOT include third parties that are only mentioned, referred to in third person, or teams/companies/departments.\n'
+        'Example: if the narrator says "my brother Tom attends every meeting", Tom is NOT a participant unless Tom himself speaks in the transcript.\n'
         '\n'
         '### Decisions\n'
         '"decisions" must include only decisions explicitly made in the transcript. Otherwise return [].\n'
         '\n'
-        '### Action Items (Ownership constraints)\n'
-        'Action items can ONLY be assigned to an active participant from the "participants" list.\n'
-        'If an action mentions a third party (e.g., "Talk to Rotem"), the owner MUST be the meeting participant responsible for contacting them, not the third party.\n'
-        'If no owner is explicitly assigned to an active participant, set "owner": null.\n'
-        'If no due date is explicitly stated, set "due": null.\n'
+        '### Action Items (Ownership)\n'
+        '"owner" is whoever must **perform** the task (the doer), not someone who is only mentioned as the target of contact.\n'
+        '- CRITICAL: If the task is phrased like "talk to Rotem", "call Sarah", "email the vendor", "ping the manager", the **mission** is for someone else to reach out. The owner is the person who must do that outreach (e.g. the speaker who said "I will", or whoever was assigned in the same exchange), NOT Rotem/Sarah/the vendor unless the transcript clearly assigns the work to them.\n'
+        '- Example: "I\'ll talk to Rotem about the assets" → owner is the speaker (use their name from context or a matching "Speaker N" from participants), NOT "Rotem".\n'
+        '- The owner MAY be an active participant from "participants" when they are the one who must act.\n'
+        '- The owner MAY be a third-party person or role only when the transcript clearly assigns **that** person or role to **do** the work (e.g. "Rich keeps the paper out there" → "Rich"; "the production manager will fix it" → "the production manager").\n'
+        '- NEVER invent a name or role that is not present or strongly implied in the transcript.\n'
+        '- If the doer cannot be identified, set "owner": null (never use the contact-only person as owner for "talk to X" tasks).\n'
+        '- If no due date is explicitly stated, set "due": null.\n'
         '\n'
         '### Integrity checks (MUST satisfy)\n'
-        '- Every action_items[].owner is either null OR exactly one of "participants".\n'
         '- "participants" contains only active speakers.\n'
+        '- Every action_items[].owner is either null OR the person/role who must **perform** the task; never use someone who is only the object of "talk to / call / email" unless they are clearly assigned to do the work.\n'
         '- Output JSON matches the schema exactly, with no extra keys.\n'
         '\n'
         '### Transcript\n'
         f'{transcript}\n'
     )
+
+
+def _cache_key_for_transcript(transcript: str) -> str:
+    return hashlib.sha256(transcript.encode('utf-8')).hexdigest()
+
+
+def _now_iso_utc() -> str:
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def _read_attempts_file(cache_path: Path) -> dict | None:
+    """
+    Read an attempts-history file. Expected shape:
+        { "transcript_hash": "...", "attempts": [ {...}, ... ] }
+    Returns None if missing, unreadable, or wrong shape.
+    """
+    try:
+        data = json.loads(cache_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    if not isinstance(data, dict):
+        return None
+    attempts = data.get('attempts')
+    if not isinstance(attempts, list):
+        return None
+    return data
+
+
+def _find_matching_attempt(attempts: list[dict], *, model: str, prompt_version: str) -> dict | None:
+    # Return the LAST attempt matching (model, prompt_version), or None.
+    match: dict | None = None
+    for a in attempts:
+        if not isinstance(a, dict):
+            continue
+        if str(a.get('model') or '') == model and str(a.get('prompt_version') or '') == prompt_version:
+            match = a
+    return match
+
+
+def _write_attempts_file(cache_path: Path, payload: dict) -> None:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            delete=False,
+            dir=str(cache_path.parent),
+            prefix=f'{cache_path.stem}.',
+            suffix='.tmp',
+        ) as tmp:
+            tmp_path = Path(tmp.name)
+            tmp.write(json.dumps(payload, ensure_ascii=False, indent=2))
+        tmp_path.replace(cache_path)
+    finally:
+        if tmp_path and tmp_path.exists() and tmp_path != cache_path:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def _append_attempt(cache_path: Path, *, transcript_hash: str, attempt: dict) -> None:
+    existing = _read_attempts_file(cache_path)
+    if existing is None:
+        existing = {'transcript_hash': transcript_hash, 'attempts': []}
+    existing['transcript_hash'] = transcript_hash
+    existing.setdefault('attempts', []).append(attempt)
+    _write_attempts_file(cache_path, existing)
 
 
 def _parse_and_validate(payload_text: str) -> SummaryResult:
@@ -203,28 +299,38 @@ def _parse_and_validate(payload_text: str) -> SummaryResult:
     )
 
 
-def _enforce_speaker_only_participants(*, transcript: str, result: SummaryResult) -> SummaryResult:
+def _enforce_participants_non_empty(*, transcript: str, result: SummaryResult) -> SummaryResult:
     """
-    Safety net against hallucinated participants / owners:
-    - participants can only be active speaker labels in the transcript
-    - action item owners can only be participants (else null)
+    Safety net:
+    - Trust the LLM's participants list (it does the speaker-count inference).
+    - Dedupe + drop empty strings.
+    - If the list is empty but the transcript has content, fall back to ["Speaker 1"]
+      (there is always at least one speaker).
+    - action_items[].owner is trusted as-is (the prompt forbids invented names);
+      we only normalize whitespace and let the LLM decide between participant,
+      third-party name/role, or null.
     """
-    speaker_labels = _infer_participants_from_transcript(transcript)
-    allowed = set(speaker_labels)
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for p in result.participants:
+        name = (p or '').strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
 
-    filtered_participants = [p for p in result.participants if p in allowed]
-    if not filtered_participants and speaker_labels:
-        filtered_participants = speaker_labels
+    if not deduped and transcript.strip():
+        deduped = ['Speaker 1']
 
-    filtered_allowed = set(filtered_participants)
     cleaned_items: list[ActionItem] = []
     for item in result.action_items:
-        owner = item.owner if (item.owner and item.owner in filtered_allowed) else None
+        owner_raw = (item.owner or '').strip()
+        owner = owner_raw or None
         cleaned_items.append(ActionItem(task=item.task, owner=owner, due=item.due))
 
     return SummaryResult(
         summary=result.summary,
-        participants=filtered_participants,
+        participants=deduped,
         decisions=result.decisions,
         action_items=cleaned_items,
         model=result.model,
@@ -240,38 +346,59 @@ def summarize_transcript(
     timeout_sec: float = 60.0,
     cache_dir: str | Path = 'backend/.cache/summaries',
     max_calls_per_min: int = 10,
+    prompt_version: str = _DEFAULT_PROMPT_VERSION,
+    retry_on_invalid_json: bool = False,
+    rewrite_on_language_mismatch: bool = False,
 ) -> SummaryResult:
-    transcript_clean = (transcript or '').strip()
+    """
+    Summarize a transcript using an LLM, with caching to minimize paid calls.
+
+    Call behavior:
+    - Cache hit: **0** provider calls.
+    - Cache miss: **1** provider call.
+    - Optional: +1 call to fix invalid JSON (`retry_on_invalid_json=True`)
+    - Optional: +1 call to rewrite language (`rewrite_on_language_mismatch=True`)
+    """
+    transcript_clean = _normalize_transcript_for_cache(transcript)
     if not transcript_clean:
         raise SummarizationError('Transcript is empty', code='empty_transcript')
 
-    h = hashlib.sha256(transcript_clean.encode('utf-8')).hexdigest()
-    cache_root = Path(cache_dir)
-    cache_path = cache_root / f'{h}.json'
-    if cache_path.exists():
-        cached = json.loads(cache_path.read_text(encoding='utf-8'))
-        try:
-            payload = {
-                'summary': cached.get('summary'),
-                'participants': cached.get('participants'),
-                'decisions': cached.get('decisions'),
-                'action_items': cached.get('action_items'),
-            }
-            result = _parse_and_validate(json.dumps(payload, ensure_ascii=False))
-        except SummarizationError:
-            cache_path.unlink(missing_ok=True)
-        else:
-            if _language_mismatch(transcript=transcript_clean, result=result):
-                cache_path.unlink(missing_ok=True)
+    transcript_hash = _cache_key_for_transcript(transcript_clean)
+    cache_root = _resolve_cache_dir(cache_dir)
+    cache_path = cache_root / f'{transcript_hash}.json'
+
+    file_data = _read_attempts_file(cache_path) if cache_path.exists() else None
+    if file_data is not None:
+        match = _find_matching_attempt(
+            file_data.get('attempts') or [],
+            model=model,
+            prompt_version=prompt_version,
+        )
+        if match is not None:
+            try:
+                payload = {
+                    'summary': match.get('summary'),
+                    'participants': match.get('participants'),
+                    'decisions': match.get('decisions'),
+                    'action_items': match.get('action_items'),
+                }
+                result = _parse_and_validate(json.dumps(payload, ensure_ascii=False))
+            except SummarizationError:
+                # Bad attempt entry — ignore it and fall through to a fresh call.
+                pass
             else:
-                return SummaryResult(
-                    summary=result.summary,
-                    participants=result.participants,
-                    decisions=result.decisions,
-                    action_items=result.action_items,
-                    model=str(cached.get('model') or model),
-                    cached=True,
-                )
+                if not (
+                    rewrite_on_language_mismatch
+                    and _language_mismatch(transcript=transcript_clean, result=result)
+                ):
+                    return SummaryResult(
+                        summary=result.summary,
+                        participants=result.participants,
+                        decisions=result.decisions,
+                        action_items=result.action_items,
+                        model=model,
+                        cached=True,
+                    )
 
     now = time.time()
     cutoff = now - 60
@@ -297,6 +424,9 @@ def summarize_transcript(
     try:
         parsed = _parse_and_validate(text)
     except SummarizationError as e:
+        if not retry_on_invalid_json:
+            raise e
+
         # One retry: ask the model to fix JSON only.
         fix_res = client.responses.create(
             model=model,
@@ -310,7 +440,7 @@ def summarize_transcript(
         fixed_text = (fix_res.output_text or '').strip()
         parsed = _parse_and_validate(fixed_text)
 
-    if _language_mismatch(transcript=transcript_clean, result=parsed):
+    if rewrite_on_language_mismatch and _language_mismatch(transcript=transcript_clean, result=parsed):
         language_name = _guess_language_name(transcript_clean)
         rewrite_res = client.responses.create(
             model=model,
@@ -325,21 +455,20 @@ def summarize_transcript(
         rewritten_text = (rewrite_res.output_text or '').strip()
         parsed = _parse_and_validate(rewritten_text)
 
-    parsed = _enforce_speaker_only_participants(transcript=transcript_clean, result=parsed)
+    parsed = _enforce_participants_non_empty(transcript=transcript_clean, result=parsed)
 
-    cache_root.mkdir(parents=True, exist_ok=True)
-    cache_root.joinpath(f'{h}.json').write_text(
-        json.dumps(
-            {
-                'summary': parsed.summary,
-                'participants': parsed.participants,
-                'decisions': parsed.decisions,
-                'action_items': [i.model_dump() for i in parsed.action_items],
-                'model': model,
-            },
-            ensure_ascii=False,
-        ),
-        encoding='utf-8',
+    _append_attempt(
+        cache_path,
+        transcript_hash=transcript_hash,
+        attempt={
+            'model': model,
+            'prompt_version': prompt_version,
+            'created_at': _now_iso_utc(),
+            'summary': parsed.summary,
+            'participants': parsed.participants,
+            'decisions': parsed.decisions,
+            'action_items': [i.model_dump() for i in parsed.action_items],
+        },
     )
 
     return SummaryResult(

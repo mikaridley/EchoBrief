@@ -1,3 +1,5 @@
+"""Dev-only OpenAI connectivity test route (disabled by default)."""
+
 from fastapi import APIRouter, HTTPException
 from openai import OpenAI
 
@@ -10,6 +12,8 @@ router = APIRouter()
 @router.get('/openai/test')
 def openai_test() -> dict:
     settings = get_settings()
+    if not settings.openai_test_enabled:
+        raise HTTPException(status_code=404, detail='Not found')
     if not settings.openai_api_key:
         raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY')
 
