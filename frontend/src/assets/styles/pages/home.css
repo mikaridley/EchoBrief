@@ -1,4 +1,9 @@
 .home-page {
   padding-block-end: 4rem;
-}
 
+  .home-page__description {
+    h2 {
+      font-weight: 500;
+    }
+  }
+}
