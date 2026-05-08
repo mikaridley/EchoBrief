@@ -8,12 +8,13 @@ html {
   font-size: 16px;
   scrollbar-gutter: stable;
   overflow-x: clip;
+  font-family: manrope, sans-serif;
 }
 
 body {
   margin: 0;
   overflow-x: clip;
-  background: var(--sec-bg);
+  background: var(--prime-bg);
   color: var(--prime-text);
 }
 

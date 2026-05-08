@@ -2,11 +2,11 @@
   --prime-bg: #FDF7F5;
   --sec-bg: #FFFFFF;
   --prime-text: #262626;
-  --sec-text: #5E5E5E;
   --light-text: #FFFFFF;
-  --prime-accent-300: #F9F2EF;
-  --prime-accent-500: #F3E0DE;
-  --prime-accent-700: #E8ADAD;
+
+  --brand-one:#1970FB;
+  --brand-two:#7636ED;
+  --brand-three:#D525BF;
 
   --screen-width: 354px;
   --sides-margin: 1.5rem;
