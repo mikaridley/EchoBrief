@@ -1,4 +1,7 @@
 .home-page {
+  display: grid;
+  gap: 2rem;
+
   padding-block-end: 4rem;
 
   .home-page__description {
