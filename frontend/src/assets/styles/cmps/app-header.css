@@ -2,6 +2,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  background-color: var(--prime-bg-color);
 
   .app-header__inner {
     display: flex;
