@@ -40,6 +40,7 @@ logs/
 
 # App caches
 backend/.cache/
+backend/.env
 
 # OS / editor
 .DS_Store
