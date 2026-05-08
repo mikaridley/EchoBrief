@@ -1,26 +1,8 @@
-import { useId, useMemo, useRef, useState } from 'react'
-import { UploadCloud, X, FileAudio2 } from 'lucide-react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { UploadCloud, X } from 'lucide-react'
 import { uploadAudioForProcessing } from '../services/process.service.js'
 
-const ACCEPT = [
-  'audio/*',
-  '.mp3',
-  '.wav',
-  '.m4a',
-  '.mp4',
-  '.mpeg',
-  '.mpga',
-  '.webm',
-].join(',')
-
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
-  const value = bytes / 1024 ** idx
-  const digits = idx === 0 ? 0 : idx === 1 ? 0 : 1
-  return `${value.toFixed(digits)} ${units[idx]}`
-}
+const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 
 export function AudioUpload() {
   const inputId = useId()
@@ -32,20 +14,25 @@ export function AudioUpload() {
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
 
-  const fileMeta = useMemo(() => {
-    if (!file) return null
-    return {
-      name: file.name,
-      size: formatBytes(file.size),
-      type: file.type || 'audio',
-    }
+  const previewUrl = useMemo(() => {
+    if (!file) return ''
+    return URL.createObjectURL(file)
   }, [file])
 
-  function onPickFile(ev) {
-    const next = ev.target.files?.[0] || null
+  useEffect(() => {
+    if (!previewUrl) return
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
+
+  function setSingleFile(next) {
     setError('')
     setResult(null)
     setFile(next)
+  }
+
+  function onPickFile(ev) {
+    const next = ev.target.files?.[0] || null
+    setSingleFile(next)
   }
 
   function onClearFile() {
@@ -74,9 +61,7 @@ export function AudioUpload() {
 
     const next = ev.dataTransfer.files?.[0] || null
     if (!next) return
-    setError('')
-    setResult(null)
-    setFile(next)
+    setSingleFile(next)
   }
 
   async function onUpload() {
@@ -129,28 +114,16 @@ export function AudioUpload() {
           className="audio-upload__input"
           type="file"
           accept={ACCEPT}
+          multiple={false}
           onChange={onPickFile}
         />
       </div>
 
-      {fileMeta && (
-        <section className="audio-upload__file" aria-label="Selected file">
-          <div className="audio-upload__file-icon" aria-hidden="true">
-            <FileAudio2 />
-          </div>
+      {previewUrl && (
+        <section className="audio-upload__player" aria-label="Audio preview">
+          <audio className="audio-upload__audio" controls preload="metadata" src={previewUrl} />
 
-          <div className="audio-upload__file-meta">
-            <div className="audio-upload__file-name">{fileMeta.name}</div>
-            <div className="audio-upload__file-sub">
-              <span className="audio-upload__file-size">{fileMeta.size}</span>
-              <span className="audio-upload__dot" aria-hidden="true">
-                ·
-              </span>
-              <span className="audio-upload__file-type">{fileMeta.type}</span>
-            </div>
-          </div>
-
-          <button className="audio-upload__file-clear" type="button" onClick={onClearFile} aria-label="Remove file">
+          <button className="audio-upload__player-clear" type="button" onClick={onClearFile} aria-label="Remove file">
             <X />
           </button>
         </section>
