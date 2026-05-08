@@ -17,48 +17,56 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap:1rem;
+      gap: 1rem;
 
       .app-header__logo-img {
         width: 6rem;
-        height: auto
+        height: auto;
       }
-    
+
       .app-header__logo-text {
         font-size: 2rem;
         font-weight: 700;
         white-space: nowrap;
-        background-image: linear-gradient(90deg, var(--brand-one), var(--brand-two), var(--brand-three));
+        background-image: linear-gradient(
+          90deg,
+          var(--brand-one),
+          var(--brand-two),
+          var(--brand-three)
+        );
         background-clip: text;
         color: transparent;
       }
-  
+
       &:focus-visible {
-        outline: 0.125rem solid color-mix(in oklab, var(--brand-one), transparent 35%);
+        outline: 0.125rem solid
+          color-mix(in oklab, var(--brand-one), transparent 35%);
         outline-offset: 0.25rem;
         border-radius: 0.75rem;
       }
     }
-  
+
     .app-header__nav {
       display: flex;
       gap: 2rem;
 
       .app-header__link {
+        font-weight: 600;
+
         &.is-active {
           color: var(--brand-one);
         }
-    
+
         &:hover {
           color: var(--brand-one);
         }
-    
+
         &:focus-visible {
-          outline: 0.125rem solid color-mix(in oklab, var(--brand-one), transparent 35%);
+          outline: 0.125rem solid
+            color-mix(in oklab, var(--brand-one), transparent 35%);
           outline-offset: 0.125rem;
         }
       }
     }
   }
 }
-
