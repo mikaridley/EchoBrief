@@ -21,6 +21,7 @@
 
   .audio-upload__header {
     .audio-upload__title {
+      font-size: 1.5rem;
       font-weight: 600;
       color: var(--brand-one);
     }
@@ -108,6 +109,8 @@
   }
 
   .audio-upload__actions {
+    display: flex;
+    gap: 1rem;
 
     .audio-upload__btn {
       width: 150px;
@@ -146,33 +149,4 @@
     }
   }
 
-  .audio-upload__result {
-    margin-block-start: 1.2rem;
-    padding-block-start: 1rem;
-    border-top: 1px solid var(--brand-one);
-
-    .audio-upload__result-title {
-      margin: 0 0 0.75rem;
-      font-size: 1.1rem;
-      color: var(--brand-two);
-    }
-
-    .audio-upload__result-block {
-      margin-block: 0.75rem;
-
-      .audio-upload__result-label {
-        margin: 0 0 0.35rem;
-        font-size: 0.95rem;
-        color: var(--brand-one);
-      }
-
-      .audio-upload__result-text {
-        margin: 0;
-        color: var(--brand-three);
-        opacity: 0.9;
-        white-space: pre-wrap;
-        overflow: auto;
-      }
-    }
-  }
 }

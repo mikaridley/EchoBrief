@@ -1,0 +1,28 @@
+.audio-upload__result {
+  display: grid;
+  gap: 1rem;
+
+  .audio-upload__result-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--brand-one);
+  }
+
+  .audio-upload__result-block {
+
+    .audio-upload__result-label {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      color: var(--brand-one);
+    }
+
+    .audio-upload__result-text {
+      margin: 0;
+      color: var(--brand-three);
+      opacity: 0.9;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+  }
+}
+

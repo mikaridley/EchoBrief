@@ -12,6 +12,10 @@ export function AudioUploadResult({
     <section className="audio-upload__result" aria-label="Backend result">
       <h3 className="audio-upload__result-title">Summary</h3>
 
+      <div className="audio-upload__result-block">
+        <pre className="audio-upload__result-text">{JSON.stringify(result, null, 2)}</pre>
+      </div>
+
       <footer className="audio-upload__actions">
         <button className="audio-upload__btn" type="button" onClick={onUploadNew} disabled={isUploading || isDownloading}>
           Upload new
@@ -25,11 +29,6 @@ export function AudioUploadResult({
           {error && <p className="audio-upload__error">{error}</p>}
         </div>
       </footer>
-
-      <div className="audio-upload__result-block">
-        <h4 className="audio-upload__result-label">Backend response</h4>
-        <pre className="audio-upload__result-text">{JSON.stringify(result, null, 2)}</pre>
-      </div>
     </section>
   )
 }
