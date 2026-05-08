@@ -1,32 +1,11 @@
-.app {
+.app-layout {
+display: grid;
+grid-template-rows: auto 1fr;
+
   min-height: 100dvh;
-  background: var(--clr-bg);
 
-  .app__content {
-    width: min(100% - 2rem, var(--max-width));
-    margin-inline: auto;
-    padding-block: 4rem;
-  }
-
-  .app__title {
-    margin: 0 0 0.5rem;
-    font-size: 2rem;
-    letter-spacing: -0.02em;
-  }
-
-  .app__subtitle {
-    margin: 0 0 1.5rem;
-    color: var(--clr-muted);
-    max-width: 46ch;
-  }
-}
-
-.btn {
-  border: 0.0625rem solid var(--clr-border);
-  background: var(--clr-primary);
-  color: var(--clr-primary-contrast);
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-1);
-  box-shadow: var(--shadow-1);
-  cursor: pointer;
+  background-image: var(--prime-bg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
