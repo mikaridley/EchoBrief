@@ -3,9 +3,6 @@ display: grid;
 grid-template-rows: auto 1fr;
 
   min-height: 100dvh;
-
-  background-image: var(--prime-bg);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  width: min(calc(100% - (2 * var(--sides-margin))), var(--screen-width));
+  margin-inline: auto;
 }
