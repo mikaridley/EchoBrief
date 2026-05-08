@@ -45,6 +45,9 @@
       gap: 2rem;
 
       .app-header__link {
+        &.is-active {
+          color: var(--brand-one);
+        }
     
         &:hover {
           color: var(--brand-one);

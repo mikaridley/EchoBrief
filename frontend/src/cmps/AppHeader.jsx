@@ -1,21 +1,33 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
+import { NavLink } from 'react-router-dom'
 
 export function AppHeader() {
   return (
     <header className="app-header">
       <div className="app-header__inner">
-        <a className="app-header__logo" href="/" aria-label="EchoBrief home">
+        <NavLink className="app-header__logo" to="/" aria-label="EchoBrief home">
           <img className="app-header__logo-img" src={logoUrl} alt="" />
           <span className="app-header__logo-text">EchoBrief</span>
-        </a>
+        </NavLink>
 
         <nav className="app-header__nav" aria-label="Primary">
-          <a className="app-header__link" href="/">
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? 'app-header__link is-active' : 'app-header__link'
+            }
+            to="/"
+            end
+          >
             Home
-          </a>
-          <a className="app-header__link" href="/about-team">
+          </NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? 'app-header__link is-active' : 'app-header__link'
+            }
+            to="/about-team"
+          >
             About the team
-          </a>
+          </NavLink>
         </nav>
       </div>
     </header>
