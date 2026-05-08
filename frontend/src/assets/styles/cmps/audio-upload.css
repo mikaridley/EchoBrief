@@ -159,6 +159,7 @@
         color: var(--brand-three);
         opacity: 0.9;
         white-space: pre-wrap;
+        overflow: auto;
       }
     }
   }

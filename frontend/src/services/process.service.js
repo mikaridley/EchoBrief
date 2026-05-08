@@ -25,3 +25,32 @@ export async function uploadAudioForProcessing(file) {
   return res.json()
 }
 
+export async function downloadDocxFromResult(result) {
+  if (!result) throw new Error('Missing result')
+
+  const res = await fetch(`${appConfig.apiBaseUrl}/api/docx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(result),
+  })
+
+  if (!res.ok) {
+    let message = `DOCX download failed (${res.status})`
+    try {
+      const data = await res.json()
+      message = data?.detail || message
+    } catch {
+      // ignore
+    }
+    throw new Error(message)
+  }
+
+  const blob = await res.blob()
+  const fallbackName = 'meeting-summary.docx'
+  const contentDisposition = res.headers.get('content-disposition') || ''
+  const match = contentDisposition.match(/filename="([^"]+)"/i)
+  const filename = match?.[1] || fallbackName
+
+  return { blob, filename }
+}
+

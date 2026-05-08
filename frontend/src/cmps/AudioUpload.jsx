@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UploadCloud, X } from 'lucide-react'
-import { uploadAudioForProcessing } from '../services/process.service.js'
+import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
 
 const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 
@@ -11,6 +11,7 @@ export function AudioUpload() {
   const [file, setFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
 
@@ -40,6 +41,10 @@ export function AudioUpload() {
     setResult(null)
     setFile(null)
     if (inputRef.current) inputRef.current.value = ''
+  }
+
+  function onUploadNew() {
+    onClearFile()
   }
 
   function onOpenPicker() {
@@ -80,88 +85,119 @@ export function AudioUpload() {
     }
   }
 
+  async function onDownloadDocx() {
+    if (!result || isDownloading) return
+    setIsDownloading(true)
+    setError('')
+
+    try {
+      const { blob, filename } = await downloadDocxFromResult(result)
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename || 'meeting-summary.docx'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err?.message || 'DOCX download failed')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <section className="audio-upload" aria-label="Upload meeting audio">
       <header className="audio-upload__header">
         <h2 className="audio-upload__title">Upload a meeting recording</h2>
       </header>
 
-      <div
-        className={`audio-upload__drop ${isDragging ? 'is-dragging' : ''}`}
-        onDragOver={onDragOver}
-        onDragEnter={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
-        role="button"
-        tabIndex={0}
-        onClick={onOpenPicker}
-        onKeyDown={(ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') onOpenPicker()
-        }}
-      >
-        <div className="audio-upload__drop-icon" aria-hidden="true">
-          <UploadCloud />
-        </div>
+      {!result && (
+        <>
+          <div
+            className={`audio-upload__drop ${isDragging ? 'is-dragging' : ''}`}
+            onDragOver={onDragOver}
+            onDragEnter={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            role="button"
+            tabIndex={0}
+            onClick={onOpenPicker}
+            onKeyDown={(ev) => {
+              if (ev.key === 'Enter' || ev.key === ' ') onOpenPicker()
+            }}
+          >
+            <div className="audio-upload__drop-icon" aria-hidden="true">
+              <UploadCloud />
+            </div>
 
-        <div className="audio-upload__drop-content">
-          <div className="audio-upload__drop-title">Drag & drop an audio file here</div>
-          <div className="audio-upload__drop-hint">or click to choose a file</div>
-        </div>
+            <div className="audio-upload__drop-content">
+              <div className="audio-upload__drop-title">Drag & drop an audio file here</div>
+              <div className="audio-upload__drop-hint">or click to choose a file</div>
+            </div>
 
-        <input
-          id={inputId}
-          ref={inputRef}
-          className="audio-upload__input"
-          type="file"
-          accept={ACCEPT}
-          multiple={false}
-          onChange={onPickFile}
-        />
-      </div>
+            <input
+              id={inputId}
+              ref={inputRef}
+              className="audio-upload__input"
+              type="file"
+              accept={ACCEPT}
+              multiple={false}
+              onChange={onPickFile}
+            />
+          </div>
 
-      {previewUrl && (
-        <section className="audio-upload__player" aria-label="Audio preview">
-          <audio className="audio-upload__audio" controls preload="metadata" src={previewUrl} />
+          {previewUrl && (
+            <section className="audio-upload__player" aria-label="Audio preview">
+              <audio className="audio-upload__audio" controls preload="metadata" src={previewUrl} />
 
-          <button className="audio-upload__player-clear" type="button" onClick={onClearFile} aria-label="Remove file">
-            <X />
-          </button>
-        </section>
+              <button
+                className="audio-upload__player-clear"
+                type="button"
+                onClick={onClearFile}
+                aria-label="Remove file"
+              >
+                <X />
+              </button>
+            </section>
+          )}
+
+          <footer className="audio-upload__actions">
+            <button className="audio-upload__btn" type="button" onClick={onUpload} disabled={!file || isUploading}>
+              {isUploading ? 'Uploading…' : 'Upload'}
+            </button>
+
+            <div className="audio-upload__status" aria-live="polite">
+              {error && <p className="audio-upload__error">{error}</p>}
+            </div>
+          </footer>
+        </>
       )}
-
-      <footer className="audio-upload__actions">
-        <button
-          className="audio-upload__btn"
-          type="button"
-          onClick={onUpload}
-          disabled={!file || isUploading}
-        >
-          {isUploading ? 'Uploading…' : 'Upload'}
-        </button>
-
-        <div className="audio-upload__status" aria-live="polite">
-          {error && <p className="audio-upload__error">{error}</p>}
-          {result && !error && <p className="audio-upload__success">Uploaded. Backend returned a response.</p>}
-        </div>
-      </footer>
 
       {result && (
         <section className="audio-upload__result" aria-label="Backend result">
           <h3 className="audio-upload__result-title">Result</h3>
 
-          {result.summary && (
-            <div className="audio-upload__result-block">
-              <h4 className="audio-upload__result-label">Summary</h4>
-              <p className="audio-upload__result-text">{result.summary}</p>
-            </div>
-          )}
+          <footer className="audio-upload__actions">
+            <button className="audio-upload__btn" type="button" onClick={onUploadNew} disabled={isUploading || isDownloading}>
+              Upload new
+            </button>
 
-          {result.transcript && (
-            <div className="audio-upload__result-block">
-              <h4 className="audio-upload__result-label">Transcript</h4>
-              <p className="audio-upload__result-text">{result.transcript}</p>
+            <button className="audio-upload__btn" type="button" onClick={onDownloadDocx} disabled={isDownloading}>
+              {isDownloading ? 'Preparing…' : 'Download .docx'}
+            </button>
+
+            <div className="audio-upload__status" aria-live="polite">
+              {error && <p className="audio-upload__error">{error}</p>}
             </div>
-          )}
+          </footer>
+
+          <div className="audio-upload__result-block">
+            <h4 className="audio-upload__result-label">Backend response</h4>
+            <pre className="audio-upload__result-text">{JSON.stringify(result, null, 2)}</pre>
+          </div>
         </section>
       )}
     </section>
