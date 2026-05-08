@@ -1,0 +1,61 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  .app-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    width: 100%;
+    padding-block: 1rem;
+    padding-inline: var(--sides-margin);
+
+    .app-header__logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap:1rem;
+
+      .app-header__logo-img {
+        width: 6rem;
+        height: auto
+      }
+    
+      .app-header__logo-text {
+        font-size: 2rem;
+        font-weight: 700;
+        white-space: nowrap;
+        background-image: linear-gradient(90deg, var(--brand-one), var(--brand-two), var(--brand-three));
+        background-clip: text;
+        color: transparent;
+      }
+  
+      &:focus-visible {
+        outline: 0.125rem solid color-mix(in oklab, var(--brand-one), transparent 35%);
+        outline-offset: 0.25rem;
+        border-radius: 0.75rem;
+      }
+    }
+  
+    .app-header__nav {
+      display: flex;
+      gap: 2rem;
+
+      .app-header__link {
+    
+        &:hover {
+          color: var(--brand-one);
+        }
+    
+        &:focus-visible {
+          outline: 0.125rem solid color-mix(in oklab, var(--brand-one), transparent 35%);
+          outline-offset: 0.125rem;
+        }
+      }
+    }
+  }
+}
+
