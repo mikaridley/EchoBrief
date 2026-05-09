@@ -1,10 +1,8 @@
 :root {
-  --prime-bg: #FDF7F5;
-  --sec-bg: #dee2ea;
-  --prime-text: #dee2ea;
-
   --prime-bg: url('../../imgs/background.png');
   --prime-bg-color:#090A15;
+  --sec-bg: #dee2ea;
+  --prime-text: #dee2ea;
 
   --brand-one:#1970FB;
   --brand-two:#7636ED;

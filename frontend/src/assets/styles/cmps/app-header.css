@@ -8,7 +8,6 @@
 
     width: 100%;
     padding-block: 1rem;
-    padding-inline: var(--sides-margin);
 
     .app-header__logo {
       display: flex;
@@ -69,24 +68,39 @@
     .app-header__auth {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      min-width: 12rem;
+      gap: 2rem;
+      position: relative;
+
+      &::before {
+        content: '';
+        inline-size: 0.05rem;
+        block-size: 1.25rem;
+        background: var(--prime-text);
+      }
 
       .app-header__auth-status {
-        color: var(--clr-text-muted);
+        color: color-mix(in oklab, var(--prime-text), transparent 35%);
+      }
+
+      .app-header__google-login-mount {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
       }
 
       .app-header__auth-btn {
         border: 0;
+        padding: 0;
+
         background: transparent;
-        padding: 0.6rem 0.9rem;
-        border-radius: 0.75rem;
         font-weight: 600;
-        color: var(--clr-text);
+        font-size: 1rem;
+        color: var(--prime-text);
         cursor: pointer;
 
         &:hover {
-          background: color-mix(in oklab, var(--clr-bg), var(--brand-one) 8%);
+          color: var(--brand-two);
         }
 
         &:focus-visible {

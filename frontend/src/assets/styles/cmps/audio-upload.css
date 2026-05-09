@@ -38,18 +38,18 @@
     .audio-upload__blocked-title {
       margin: 0;
       font-weight: 700;
-      color: var(--clr-text);
+      color: var(--prime-text);
     }
 
     .audio-upload__blocked-text {
       margin: 0;
-      color: var(--clr-text-muted);
+      color: color-mix(in oklab, var(--prime-text), transparent 35%);
       line-height: 1.4;
     }
 
     .audio-upload__blocked-email {
       font-weight: 700;
-      color: var(--clr-text);
+      color: var(--prime-text);
     }
   }
 

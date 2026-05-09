@@ -1,11 +1,23 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
+import { useRef } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export function AppHeader() {
   const { me, isLoading, onLoginSuccess, logout } = useAuth()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  const googleLoginMountRef = useRef(null)
+
+  function onLoginClick() {
+    const el = googleLoginMountRef.current
+    if (!el) return
+
+    const btn = el.querySelector('div[role="button"]')
+    if (!btn) return
+
+    btn.click()
+  }
 
   return (
     <header className="app-header">
@@ -33,20 +45,26 @@ export function AppHeader() {
           >
             About the team
           </NavLink>
-        </nav>
 
-        <div className="app-header__auth" aria-label="Authentication">
+          <div className="app-header__auth" aria-label="Authentication">
           {isLoading && <span className="app-header__auth-status">…</span>}
 
           {!isLoading && !me && (
             <>
               {!googleClientId && <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>}
               {!!googleClientId && (
-                <GoogleLogin
-                  onSuccess={(res) => onLoginSuccess(res?.credential || '')}
-                  onError={() => {}}
-                  useOneTap={false}
-                />
+                <>
+                  <button className="app-header__auth-btn" type="button" onClick={onLoginClick}>
+                    Log in
+                  </button>
+                  <span className="app-header__google-login-mount" ref={googleLoginMountRef} aria-hidden="true">
+                    <GoogleLogin
+                      onSuccess={(res) => onLoginSuccess(res?.credential || '')}
+                      onError={() => {}}
+                      useOneTap={false}
+                    />
+                  </span>
+                </>
               )}
             </>
           )}
@@ -57,6 +75,9 @@ export function AppHeader() {
             </button>
           )}
         </div>
+        </nav>
+
+
       </div>
     </header>
   )
