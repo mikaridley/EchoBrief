@@ -29,27 +29,38 @@
 
   .audio-upload__blocked {
     display: grid;
-    gap: 0.35rem;
-    padding: 1rem;
-    border-radius: 1rem;
-    border: 1px solid color-mix(in oklab, var(--brand-one), transparent 60%);
-    background: color-mix(in oklab, var(--sec-bg), var(--brand-one) 6%);
 
-    .audio-upload__blocked-title {
-      margin: 0;
-      font-weight: 700;
-      color: var(--prime-text);
+    .audio-upload__blocked-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+
+      .audio-upload__blocked-icon {
+        flex-shrink: 0;
+        color: var(--warning);
+
+        svg {
+          inline-size: 1.25rem;
+          block-size: 1.25rem;
+        }
+      }
+
+      .audio-upload__blocked-title {
+        margin: 0;
+        font-weight: 700;
+        color: var(--warning);
+      }
     }
 
     .audio-upload__blocked-text {
       margin: 0;
-      color: color-mix(in oklab, var(--prime-text), transparent 35%);
+      color: var(--warning);
       line-height: 1.4;
     }
 
     .audio-upload__blocked-email {
       font-weight: 700;
-      color: var(--prime-text);
+      color: var(--warning);
     }
   }
 
@@ -90,11 +101,11 @@
 
       .audio-upload__drop-title {
         font-weight: 600;
-        color: var(--brand-two);
+        color: var(--brand-one);
       }
 
       .audio-upload__drop-hint {
-        color: var(--brand-three);
+        color: var(--dark-text);
         opacity: 0.85;
       }
     }

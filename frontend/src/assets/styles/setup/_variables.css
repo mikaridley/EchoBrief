@@ -3,10 +3,13 @@
   --prime-bg-color:#090A15;
   --sec-bg: #dee2ea;
   --prime-text: #dee2ea;
+  --dark-text:#0e0f14;
 
   --brand-one:#1970FB;
   --brand-two:#7636ED;
   --brand-three:#D525BF;
+
+  --warning:#d71c1c;
 
   --screen-width: 1200px;
   --sides-margin: 1.5rem;

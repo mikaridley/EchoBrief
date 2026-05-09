@@ -43,7 +43,7 @@ export function AppHeader() {
             }
             to="/about-team"
           >
-            About the team
+            About
           </NavLink>
 
           <div className="app-header__auth" aria-label="Authentication">

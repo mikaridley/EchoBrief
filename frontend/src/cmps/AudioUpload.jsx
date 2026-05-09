@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { UploadCloud, X } from 'lucide-react'
+import { AlertTriangle, UploadCloud, X } from 'lucide-react'
 import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
 import { AudioUploadResult } from './AudioUploadResult.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -120,17 +120,26 @@ export function AudioUpload() {
 
       {!result && !isLoading && me && !me.enabled && (
         <section className="audio-upload__blocked" aria-label="Access required">
-          <p className="audio-upload__blocked-title">Access required</p>
+          <div className="audio-upload__blocked-row">
+            <span className="audio-upload__blocked-icon" aria-hidden="true">
+              <AlertTriangle />
+            </span>
+            <p className="audio-upload__blocked-title">Access required</p>
+          </div>
           <p className="audio-upload__blocked-text">
-            You are signed in as <span className="audio-upload__blocked-email">{me.email}</span>. Contact admin to enable
-            access.
+            Contact admin to enable access.
           </p>
         </section>
       )}
 
       {!result && !isLoading && !me && (
         <section className="audio-upload__blocked" aria-label="Sign in required">
-          <p className="audio-upload__blocked-title">Sign in required</p>
+          <div className="audio-upload__blocked-row">
+            <span className="audio-upload__blocked-icon" aria-hidden="true">
+              <AlertTriangle />
+            </span>
+            <p className="audio-upload__blocked-title">Sign in required</p>
+          </div>
           <p className="audio-upload__blocked-text">Please sign in with Google to upload and summarize.</p>
         </section>
       )}
