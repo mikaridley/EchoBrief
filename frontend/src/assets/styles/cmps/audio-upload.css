@@ -6,6 +6,7 @@
   padding: 1.5rem;
   border-radius: 1rem;
   background: var(--sec-bg);
+  font-size: clamp(0.875rem, 1.8vw, 1rem);
 
   &.has-result {
     .audio-upload__header {
@@ -21,7 +22,7 @@
 
   .audio-upload__header {
     .audio-upload__title {
-      font-size: 1.5rem;
+      font-size: 1.5em;
       font-weight: 600;
       color: var(--brand-one);
     }
@@ -155,7 +156,7 @@
       border-radius: 1rem;
       border: 1px solid var(--brand-one);
 
-      font-size: 1rem;
+      font-size: 1em;
       background: var(--brand-one);
       color: var(--sec-bg);
       font-weight: 600;
