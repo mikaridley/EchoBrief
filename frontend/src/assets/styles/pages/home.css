@@ -6,6 +6,7 @@
 
   .home-page__description {
     h2 {
+      font-size: clamp(1rem, 0.85rem + 1.1vw, 1.5rem);
       font-weight: 500;
     }
   }

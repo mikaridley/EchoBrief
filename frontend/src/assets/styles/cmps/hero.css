@@ -23,7 +23,7 @@
         align-items: baseline;
         white-space: nowrap;
         position: relative;
-        min-inline-size: calc(var(--word-ch) * 1ch);
+        min-inline-size: 150px;
       }
   
       .hero__typed {
