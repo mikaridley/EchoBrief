@@ -7,7 +7,9 @@ export function Home() {
       <Hero />
 
       <section className="home-page__description">
-        <h2>Stop worrying about missing a meeting.<br /> Upload your meeting recording and let our AI extract the bottom line for you!</h2>
+        <h2>
+          Stop worrying about missing a meeting. <br />Upload your meeting recording and let our AI extract the bottom line for you!
+        </h2>
       </section>
 
       <AudioUpload />

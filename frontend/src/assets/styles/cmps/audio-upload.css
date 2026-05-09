@@ -2,6 +2,8 @@
   display: grid;
   gap: 1rem;
 
+  inline-size: 100%;
+  min-inline-size: 0;
   max-inline-size: 48rem;
   padding: 1.5rem;
   border-radius: 1rem;
@@ -69,7 +71,11 @@
     display: flex;
     gap: 1rem;
     align-items: center;
-    
+
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
     padding: 1rem;
     border-radius: 1rem;
     border: 1px solid var(--brand-one);
@@ -87,6 +93,7 @@
       place-items: center;
       inline-size: 3rem;
       block-size: 3rem;
+      flex-shrink: 0;
       border-radius: 0.9rem;
       color: var(--brand-one);
 
@@ -99,15 +106,19 @@
     .audio-upload__drop-content {
       display: grid;
       gap: 0.2rem;
+      flex: 1 1 0;
+      min-inline-size: 0;
 
       .audio-upload__drop-title {
         font-weight: 600;
         color: var(--brand-one);
+        overflow-wrap: anywhere;
       }
 
       .audio-upload__drop-hint {
         color: var(--dark-text);
         opacity: 0.85;
+        overflow-wrap: anywhere;
       }
     }
 
@@ -124,6 +135,7 @@
 
     .audio-upload__audio {
       inline-size: 100%;
+      min-inline-size: 0;
     }
 
     .audio-upload__player-clear {
@@ -151,7 +163,8 @@
     gap: 1rem;
 
     .audio-upload__btn {
-      width: 150px;
+      inline-size: 9.375em;
+      max-inline-size: 100%;
       padding-block: 0.75rem;
       border-radius: 1rem;
       border: 1px solid var(--brand-one);
@@ -186,5 +199,33 @@
       }
     }
   }
+}
 
+@media (max-width: 450px) {
+  .audio-upload {
+    gap: 0.75rem;
+    padding: 1rem;
+    font-size: clamp(0.8rem, 3.5vw, 0.875rem);
+    width: max-content;
+
+    .audio-upload__drop {
+      gap: 0.5rem;
+
+      .audio-upload__drop-icon {
+        inline-size: 2.5em;
+        block-size: 2.5em;
+
+        svg {
+          inline-size: 1.3em;
+          block-size: 1.3em;
+        }
+      }
+    }
+
+    .audio-upload__blocked {
+      .audio-upload__blocked-text {
+        display: none;
+      }
+    }
+  }
 }

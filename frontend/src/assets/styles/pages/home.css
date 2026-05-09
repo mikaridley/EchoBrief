@@ -11,3 +11,13 @@
     }
   }
 }
+
+@media (max-width: 450px) {
+  .home-page {
+    .home-page__description {
+      h2 {
+        width: 300px;
+      }
+    }
+  }
+}
