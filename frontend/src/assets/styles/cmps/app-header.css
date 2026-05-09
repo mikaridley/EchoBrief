@@ -65,5 +65,36 @@
         }
       }
     }
+
+    .app-header__auth {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 12rem;
+
+      .app-header__auth-status {
+        color: var(--clr-text-muted);
+      }
+
+      .app-header__auth-btn {
+        border: 0;
+        background: transparent;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        color: var(--clr-text);
+        cursor: pointer;
+
+        &:hover {
+          background: color-mix(in oklab, var(--clr-bg), var(--brand-one) 8%);
+        }
+
+        &:focus-visible {
+          outline: 0.125rem solid
+            color-mix(in oklab, var(--brand-one), transparent 35%);
+          outline-offset: 0.125rem;
+        }
+      }
+    }
   }
 }

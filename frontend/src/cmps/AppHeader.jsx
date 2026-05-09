@@ -1,7 +1,12 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
+import { GoogleLogin } from '@react-oauth/google'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export function AppHeader() {
+  const { me, isLoading, onLoginSuccess, logout } = useAuth()
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
   return (
     <header className="app-header">
       <div className="app-header__inner">
@@ -29,6 +34,29 @@ export function AppHeader() {
             About the team
           </NavLink>
         </nav>
+
+        <div className="app-header__auth" aria-label="Authentication">
+          {isLoading && <span className="app-header__auth-status">…</span>}
+
+          {!isLoading && !me && (
+            <>
+              {!googleClientId && <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>}
+              {!!googleClientId && (
+                <GoogleLogin
+                  onSuccess={(res) => onLoginSuccess(res?.credential || '')}
+                  onError={() => {}}
+                  useOneTap={false}
+                />
+              )}
+            </>
+          )}
+
+          {!isLoading && me && (
+            <button className="app-header__auth-btn" type="button" onClick={logout} title={me.email}>
+              Sign out
+            </button>
+          )}
+        </div>
       </div>
     </header>
   )

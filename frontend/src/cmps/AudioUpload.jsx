@@ -2,12 +2,15 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UploadCloud, X } from 'lucide-react'
 import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
 import { AudioUploadResult } from './AudioUploadResult.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 
 export function AudioUpload() {
   const inputId = useId()
   const inputRef = useRef(null)
+
+  const { me, isLoading } = useAuth()
 
   const [file, setFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -115,6 +118,23 @@ export function AudioUpload() {
         <h2 className="audio-upload__title">Upload a meeting recording</h2>
       </header>
 
+      {!result && !isLoading && me && !me.enabled && (
+        <section className="audio-upload__blocked" aria-label="Access required">
+          <p className="audio-upload__blocked-title">Access required</p>
+          <p className="audio-upload__blocked-text">
+            You are signed in as <span className="audio-upload__blocked-email">{me.email}</span>. Contact admin to enable
+            access.
+          </p>
+        </section>
+      )}
+
+      {!result && !isLoading && !me && (
+        <section className="audio-upload__blocked" aria-label="Sign in required">
+          <p className="audio-upload__blocked-title">Sign in required</p>
+          <p className="audio-upload__blocked-text">Please sign in with Google to upload and summarize.</p>
+        </section>
+      )}
+
       {!result && (
         <>
           <div
@@ -129,6 +149,7 @@ export function AudioUpload() {
             onKeyDown={(ev) => {
               if (ev.key === 'Enter' || ev.key === ' ') onOpenPicker()
             }}
+            aria-disabled={!me?.enabled}
           >
             <div className="audio-upload__drop-icon" aria-hidden="true">
               <UploadCloud />
@@ -147,6 +168,7 @@ export function AudioUpload() {
               accept={ACCEPT}
               multiple={false}
               onChange={onPickFile}
+              disabled={!me?.enabled}
             />
           </div>
 
@@ -166,7 +188,12 @@ export function AudioUpload() {
           )}
 
           <footer className="audio-upload__actions">
-            <button className="audio-upload__btn" type="button" onClick={onUpload} disabled={!file || isUploading}>
+            <button
+              className="audio-upload__btn"
+              type="button"
+              onClick={onUpload}
+              disabled={!me?.enabled || !file || isUploading}
+            >
               {isUploading ? 'Uploading…' : 'Upload'}
             </button>
 

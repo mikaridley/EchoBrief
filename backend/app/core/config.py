@@ -54,6 +54,14 @@ class Settings(BaseSettings):
 
     openai_test_enabled: bool = Field(default=False, validation_alias='OPENAI_TEST_ENABLED')
 
+    mongo_uri: str | None = Field(default=None, validation_alias='MONGO_URI')
+    mongo_db_name: str = Field(default='echobrief', validation_alias='MONGO_DB_NAME')
+
+    auth_enabled: bool = Field(default=False, validation_alias='AUTH_ENABLED')
+    google_client_id: str | None = Field(default=None, validation_alias='GOOGLE_CLIENT_ID')
+
+    summaries_total_limit_default: int = Field(default=5, validation_alias='SUMMARIES_TOTAL_LIMIT_DEFAULT')
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(',') if o.strip()]

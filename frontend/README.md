@@ -1,15 +1,26 @@
-# React + Vite
+## EchoBrief frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Setup (Google login)
+You must create a **Google OAuth Web Client** and add `http://localhost:5173` to **Authorized JavaScript origins**.
 
-Currently, two official plugins are available:
+Then create `frontend/.env` (copy from `frontend/.env.example`) and set:
+- `VITE_GOOGLE_CLIENT_ID`
+- `VITE_API_BASE_URL` (your backend URL, e.g. `http://localhost:8001`)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+If Google shows `400 invalid_request`, it’s almost always one of:
+- Wrong client type (must be **Web**)
+- Missing origin `http://localhost:5173`
+- Missing/empty `VITE_GOOGLE_CLIENT_ID`
+- OAuth consent screen in **Testing** and your email not in **Test users**
 
-## React Compiler
+### Run
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
+Below is the original Vite template README (kept for reference).
 
 ## Expanding the ESLint configuration
 

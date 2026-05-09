@@ -27,6 +27,32 @@
     }
   }
 
+  .audio-upload__blocked {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in oklab, var(--brand-one), transparent 60%);
+    background: color-mix(in oklab, var(--sec-bg), var(--brand-one) 6%);
+
+    .audio-upload__blocked-title {
+      margin: 0;
+      font-weight: 700;
+      color: var(--clr-text);
+    }
+
+    .audio-upload__blocked-text {
+      margin: 0;
+      color: var(--clr-text-muted);
+      line-height: 1.4;
+    }
+
+    .audio-upload__blocked-email {
+      font-weight: 700;
+      color: var(--clr-text);
+    }
+  }
+
   .audio-upload__drop {
     display: flex;
     gap: 1rem;

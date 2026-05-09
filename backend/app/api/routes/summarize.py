@@ -3,8 +3,10 @@
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from fastapi import Depends
 
 from ...core.config import get_settings
+from ...core.auth import consume_summary_quota, AuthedUser
 from ...schemas.meeting import ProcessResponse
 from ...services import SummarizationError, summarize_transcript
 
@@ -17,7 +19,10 @@ class SummarizeRequest(BaseModel):
 
 
 @router.post('/summarize', response_model=ProcessResponse)
-async def summarize_text(payload: SummarizeRequest) -> ProcessResponse:
+async def summarize_text(
+    payload: SummarizeRequest,
+    _user: AuthedUser = Depends(consume_summary_quota),
+) -> ProcessResponse:
     settings = get_settings()
 
     if not settings.openai_api_key:

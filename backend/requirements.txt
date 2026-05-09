@@ -4,4 +4,6 @@ pydantic-settings
 python-multipart
 python-docx
 openai
+motor
+google-auth
 

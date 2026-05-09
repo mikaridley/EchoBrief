@@ -9,8 +9,10 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
+from fastapi import Depends
 
 from ...core.config import get_settings
+from ...core.auth import consume_summary_quota, AuthedUser
 from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
 from ...schemas.meeting import ActionItem, ProcessResponse
 
@@ -39,7 +41,10 @@ def _resolve_cache_dir(cache_dir: str) -> Path:
 
 
 @router.post('/process', response_model=ProcessResponse)
-async def process_audio(file: UploadFile = File(...)) -> ProcessResponse:
+async def process_audio(
+    file: UploadFile = File(...),
+    _user: AuthedUser = Depends(consume_summary_quota),
+) -> ProcessResponse:
     settings = get_settings()
 
     if (settings.transcription_enabled or settings.summarization_enabled) and not settings.openai_api_key:

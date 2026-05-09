@@ -1,4 +1,5 @@
 import { appConfig } from '../config/app.config.js'
+import { authService } from './auth.service.js'
 
 export async function uploadAudioForProcessing(file) {
   if (!file) throw new Error('Missing file')
@@ -8,6 +9,7 @@ export async function uploadAudioForProcessing(file) {
 
   const res = await fetch(`${appConfig.apiBaseUrl}/api/process`, {
     method: 'POST',
+    headers: authService.getAuthHeaders(),
     body: formData,
   })
 
@@ -15,7 +17,7 @@ export async function uploadAudioForProcessing(file) {
     let message = `Upload failed (${res.status})`
     try {
       const data = await res.json()
-      message = data?.detail || message
+      message = data?.detail?.message || data?.detail || message
     } catch {
       // ignore
     }
@@ -30,7 +32,7 @@ export async function downloadDocxFromResult(result) {
 
   const res = await fetch(`${appConfig.apiBaseUrl}/api/docx`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authService.getAuthHeaders() },
     body: JSON.stringify(result),
   })
 
@@ -38,7 +40,7 @@ export async function downloadDocxFromResult(result) {
     let message = `DOCX download failed (${res.status})`
     try {
       const data = await res.json()
-      message = data?.detail || message
+      message = data?.detail?.message || data?.detail || message
     } catch {
       // ignore
     }
