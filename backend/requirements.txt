@@ -6,4 +6,4 @@ python-docx
 openai
 motor
 google-auth
-
+requests
