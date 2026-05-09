@@ -40,6 +40,15 @@ def _verify_google_id_token_sync(token: str, google_client_id: str) -> dict:
 async def get_current_user(request: Request) -> AuthedUser:
     settings = get_settings()
     if not settings.auth_enabled:
+        # Safety: never allow "open admin" behavior outside local dev.
+        if not settings.is_local:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    'code': 'AUTH_DISABLED',
+                    'message': 'AUTH_ENABLED=0 is only allowed in ENV=local',
+                },
+            )
         return AuthedUser(email='dev@local', enabled=True, role='admin', summaries_total_limit=10**9)
 
     if not settings.google_client_id:

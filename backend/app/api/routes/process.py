@@ -103,7 +103,9 @@ async def process_audio(
                             model=settings.openai_summarize_model,
                             timeout_sec=settings.openai_timeout_sec,
                             cache_dir=settings.summarization_cache_dir,
-                            max_calls_per_min=settings.summarization_max_calls_per_min,
+                            max_calls_per_min=(
+                                settings.summarization_max_calls_per_min if settings.is_local else 10**9
+                            ),
                             prompt_version=settings.summarization_prompt_version,
                             retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
                             rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
@@ -121,7 +123,7 @@ async def process_audio(
 
                 return ProcessResponse(
                     transcript=tr_text,
-                    summary=summary or '(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
+                    summary=summary or 'Summarization disabled (SUMMARIZATION_ENABLED=0).',
                     participants=participants,
                     decisions=decisions,
                     action_items=action_items,
@@ -136,8 +138,8 @@ async def process_audio(
 
         if not settings.transcription_enabled:
             return ProcessResponse(
-                transcript='(dev) Transcription disabled (TRANSCRIPTION_ENABLED=0).',
-                summary='(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
+                transcript='Transcription disabled (TRANSCRIPTION_ENABLED=0).',
+                summary='Summarization disabled (SUMMARIZATION_ENABLED=0).',
                 participants=[],
                 decisions=[],
                 action_items=[],
@@ -145,17 +147,18 @@ async def process_audio(
                 meta={'duration_sec': None, 'model_versions': {'whisper': None, 'llm': None}},
             )
 
-        # Best-effort dev rate limit (prevents accidental spamming)
-        now = time.time()
-        cutoff = now - 60
-        while _recent_transcribe_calls and _recent_transcribe_calls[0] < cutoff:
-            _recent_transcribe_calls.pop(0)
-        if len(_recent_transcribe_calls) >= settings.transcription_max_calls_per_min:
-            raise HTTPException(
-                status_code=429,
-                detail='Local dev rate limit hit. Wait a minute or increase TRANSCRIPTION_MAX_CALLS_PER_MIN',
-            )
-        _recent_transcribe_calls.append(now)
+        # Best-effort local dev rate limit (not reliable in multi-worker prod)
+        if settings.is_local:
+            now = time.time()
+            cutoff = now - 60
+            while _recent_transcribe_calls and _recent_transcribe_calls[0] < cutoff:
+                _recent_transcribe_calls.pop(0)
+            if len(_recent_transcribe_calls) >= settings.transcription_max_calls_per_min:
+                raise HTTPException(
+                    status_code=429,
+                    detail='Local dev rate limit hit. Wait a minute or increase TRANSCRIPTION_MAX_CALLS_PER_MIN',
+                )
+            _recent_transcribe_calls.append(now)
 
         try:
             tr = await run_in_threadpool(
@@ -218,7 +221,9 @@ async def process_audio(
                     model=settings.openai_summarize_model,
                     timeout_sec=settings.openai_timeout_sec,
                     cache_dir=settings.summarization_cache_dir,
-                    max_calls_per_min=settings.summarization_max_calls_per_min,
+                    max_calls_per_min=(
+                        settings.summarization_max_calls_per_min if settings.is_local else 10**9
+                    ),
                     prompt_version=settings.summarization_prompt_version,
                     retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
                     rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
@@ -236,7 +241,7 @@ async def process_audio(
 
         return ProcessResponse(
             transcript=tr.transcript,
-            summary=summary or '(dev) Summarization disabled (SUMMARIZATION_ENABLED=0).',
+            summary=summary or 'Summarization disabled (SUMMARIZATION_ENABLED=0).',
             participants=participants,
             decisions=decisions,
             action_items=action_items,

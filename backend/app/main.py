@@ -43,7 +43,9 @@ def create_app() -> FastAPI:
     app.include_router(process.router, prefix='/api', tags=['process'])
     app.include_router(summarize.router, prefix='/api', tags=['summarize'])
     app.include_router(docx.router, prefix='/api', tags=['docx'])
-    app.include_router(openai_test.router, prefix='/api', tags=['openai'])
+    # Dev-only route: do not even register it unless explicitly enabled.
+    if settings.env == 'local' and settings.openai_test_enabled:
+        app.include_router(openai_test.router, prefix='/api', tags=['openai'])
 
     return app
 

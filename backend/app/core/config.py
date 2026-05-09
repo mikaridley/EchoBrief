@@ -67,6 +67,10 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(',') if o.strip()]
 
     @property
+    def is_local(self) -> bool:
+        return (self.env or '').strip().lower() == 'local'
+
+    @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
 

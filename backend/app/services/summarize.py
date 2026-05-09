@@ -402,6 +402,7 @@ def summarize_transcript(
                         cached=True,
                     )
 
+    # Best-effort local dev rate limit (not reliable in multi-worker prod)
     now = time.time()
     cutoff = now - 60
     while _recent_summarize_calls and _recent_summarize_calls[0] < cutoff:
