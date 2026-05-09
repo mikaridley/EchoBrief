@@ -1,14 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { authService } from '../services/auth.service.js'
 import { fetchMe } from '../services/user.service.js'
-
-const AuthContext = createContext(null)
+import { AuthContext } from './auth.context.js'
 
 export function AuthProvider({ children }) {
   const [me, setMe] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const token = authService.getToken()
     if (!token) {
       setMe(null)
@@ -26,32 +25,37 @@ export function AuthProvider({ children }) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  function onLoginSuccess(idToken) {
+  const onLoginSuccess = useCallback((idToken) => {
     authService.setToken(idToken)
     refresh()
-  }
+  }, [refresh])
 
-  function logout() {
+  const logout = useCallback(() => {
     authService.clearToken()
     setMe(null)
     window.location.reload()
-  }
+  }, [])
 
   useEffect(() => {
-    refresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    let isCancelled = false
+
+    ;(async () => {
+      await Promise.resolve()
+      if (isCancelled) return
+      await refresh()
+    })()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [refresh])
 
   const value = useMemo(() => {
     return { me, isLoading, refresh, onLoginSuccess, logout }
-  }, [me, isLoading])
+  }, [me, isLoading, refresh, onLoginSuccess, logout])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  return useContext(AuthContext)
 }
 

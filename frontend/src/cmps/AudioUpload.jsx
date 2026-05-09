@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, UploadCloud, X } from 'lucide-react'
 import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
 import { AudioUploadResult } from './AudioUploadResult.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useAuth } from '../context/useAuth.js'
 
 const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 

@@ -1,13 +1,17 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
-import { useRef } from 'react'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Menu, X } from 'lucide-react'
+import { useAuth } from '../context/useAuth.js'
 
 export function AppHeader() {
   const { me, isLoading, onLoginSuccess, logout } = useAuth()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
   const googleLoginMountRef = useRef(null)
+  const menuId = useId()
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   function onLoginClick() {
     const el = googleLoginMountRef.current
@@ -19,6 +23,32 @@ export function AppHeader() {
     btn.click()
   }
 
+  function closeMenu() {
+    setIsMenuOpen(false)
+  }
+
+  function onToggleMenu() {
+    setIsMenuOpen((prev) => !prev)
+  }
+
+  useEffect(() => {
+    function onKeyDown(ev) {
+      if (ev.key === 'Escape') closeMenu()
+    }
+
+    function onResize() {
+      if (window.innerWidth > 650) closeMenu()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [])
+
   return (
     <header className="app-header">
       <div className="app-header__inner">
@@ -27,13 +57,35 @@ export function AppHeader() {
           <span className="app-header__logo-text">EchoBrief</span>
         </NavLink>
 
-        <nav className="app-header__nav" aria-label="Primary">
+        <button
+          className="app-header__burger"
+          type="button"
+          onClick={onToggleMenu}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isMenuOpen}
+          aria-controls={menuId}
+        >
+          {isMenuOpen ? <X /> : <Menu />}
+        </button>
+
+        <div
+          className={`app-header__overlay ${isMenuOpen ? 'is-open' : ''}`}
+          onClick={closeMenu}
+          aria-hidden={!isMenuOpen}
+        />
+
+        <nav
+          id={menuId}
+          className={`app-header__nav ${isMenuOpen ? 'is-open' : ''}`}
+          aria-label="Primary"
+        >
           <NavLink
             className={({ isActive }) =>
               isActive ? 'app-header__link is-active' : 'app-header__link'
             }
             to="/"
             end
+            onClick={closeMenu}
           >
             Home
           </NavLink>
@@ -42,6 +94,7 @@ export function AppHeader() {
               isActive ? 'app-header__link is-active' : 'app-header__link'
             }
             to="/about-team"
+            onClick={closeMenu}
           >
             About
           </NavLink>
