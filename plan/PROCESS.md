@@ -307,4 +307,4 @@ decisions - >should appear as bullets under a title.
 
 action items -> should appear as bullets and the on who is the owner should appear ad the end of the line in its rounded icon. -->
 
-<!-- problems: refognize too many participants.  the transcript it not per person-->
+<!-- problems: refognize too many participants - we should updrage the script.  the transcript it not per person-->
