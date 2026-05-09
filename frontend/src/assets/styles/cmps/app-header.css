@@ -146,6 +146,17 @@
 @media (max-width: 650px) {
   .app-header {
     .app-header__inner {
+      .app-header__logo {
+  
+        .app-header__logo-img {
+          width: 4rem;
+        }
+  
+        .app-header__logo-text {
+          font-size: 1.4rem;
+        }
+      }
+
       .app-header__burger {
         display: inline-flex;
       }
