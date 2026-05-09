@@ -128,7 +128,6 @@ def _language_mismatch(*, transcript: str, result: SummaryResult) -> bool:
 
 
 def _make_prompt(transcript: str) -> str:
-    # Keep this prompt in sync with plan/003-phase-3-plan-with-prompt.md
     language_name = _guess_language_name(transcript)
     return (
         '### Role\n'
@@ -163,6 +162,9 @@ def _make_prompt(transcript: str) -> str:
         'If the transcript has any content, "participants" MUST contain at least one item (there is always at least one speaker).\n'
         '\n'
         '### Participant Filtering (CRITICAL)\n'
+        'STRICT RULE: A participant is ONLY someone who has spoken lines in the transcript. '
+        'If a person is mentioned as "absent", "missing", or is discussed in the third person '
+        '(e.g., "Frank is not here"), DO NOT include them in the participants list.\n'
         '"participants" must include ONLY people who actively speak in the transcript.\n'
         'Do NOT include third parties that are only mentioned, referred to in third person, or teams/companies/departments.\n'
         'Example: if the narrator says "my brother Tom attends every meeting", Tom is NOT a participant unless Tom himself speaks in the transcript.\n'
@@ -172,8 +174,8 @@ def _make_prompt(transcript: str) -> str:
         '\n'
         '### Action Items (Ownership)\n'
         '"owner" is whoever must **perform** the task (the doer), not someone who is only mentioned as the target of contact.\n'
-        '- CRITICAL: If the task is phrased like "talk to Rotem", "call Sarah", "email the vendor", "ping the manager", the **mission** is for someone else to reach out. The owner is the person who must do that outreach (e.g. the speaker who said "I will", or whoever was assigned in the same exchange), NOT Rotem/Sarah/the vendor unless the transcript clearly assigns the work to them.\n'
-        '- Example: "I\'ll talk to Rotem about the assets" → owner is the speaker (use their name from context or a matching "Speaker N" from participants), NOT "Rotem".\n'
+        '- CRITICAL: If the task is phrased like "talk to Dan", "call Sarah", "email the vendor", "ping the manager", the **mission** is for someone else to reach out. The owner is the person who must do that outreach (e.g. the speaker who said "I will", or whoever was assigned in the same exchange), NOT Dan/Sarah/the vendor unless the transcript clearly assigns the work to them.\n'
+        '- Example: "I\'ll talk to Dan about the assets" → owner is the speaker (use their name from context or a matching "Speaker N" from participants), NOT "Dan".\n'
         '- The owner MAY be an active participant from "participants" when they are the one who must act.\n'
         '- The owner MAY be a third-party person or role only when the transcript clearly assigns **that** person or role to **do** the work (e.g. "Rich keeps the paper out there" → "Rich"; "the production manager will fix it" → "the production manager").\n'
         '- NEVER invent a name or role that is not present or strongly implied in the transcript.\n'
@@ -181,7 +183,7 @@ def _make_prompt(transcript: str) -> str:
         '- If no due date is explicitly stated, set "due": null.\n'
         '\n'
         '### Integrity checks (MUST satisfy)\n'
-        '- "participants" contains only active speakers.\n'
+        '- "participants" contains only people with spoken lines in the transcript (not absent/missing/mentioned-only).\n'
         '- Every action_items[].owner is either null OR the person/role who must **perform** the task; never use someone who is only the object of "talk to / call / email" unless they are clearly assigned to do the work.\n'
         '- Output JSON matches the schema exactly, with no extra keys.\n'
         '\n'
