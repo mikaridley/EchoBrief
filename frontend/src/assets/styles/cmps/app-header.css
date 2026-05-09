@@ -74,6 +74,7 @@
 
     .app-header__nav {
       display: flex;
+      align-items: center;
       gap: 2rem;
 
       .app-header__link {
@@ -127,11 +128,25 @@
           color: color-mix(in oklab, var(--prime-text), transparent 35%);
         }
 
-        .app-header__google-login-mount {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          pointer-events: none;
+        .app-header__google-signin {
+          flex: 0 0 auto;
+          flex-shrink: 0;
+          line-height: 0;
+          background-color: var(--prime-bg-color);
+          border-radius: 0.25rem;
+
+          .app-header__gsi-button-root {
+            display: inline-block;
+            border: none;
+            box-shadow: none;
+            background-color: var(--prime-bg-color);
+          }
+
+          iframe {
+            border: none;
+            box-shadow: none;
+            display: block;
+          }
         }
 
         .app-header__auth-btn {

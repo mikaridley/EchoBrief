@@ -1,28 +1,16 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '../context/useAuth.js'
 
 export function AppHeader() {
   const { me, isLoading, authError, clearAuthError, reportGoogleLoginError, onLoginSuccess, logout } = useAuth()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-  const googleLoginMountRef = useRef(null)
   const menuId = useId()
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  function onLoginClick() {
-    clearAuthError()
-    const el = googleLoginMountRef.current
-    if (!el) return
-
-    const btn = el.querySelector('div[role="button"]')
-    if (!btn) return
-
-    btn.click()
-  }
 
   function closeMenu() {
     setIsMenuOpen(false)
@@ -110,24 +98,18 @@ export function AppHeader() {
                     <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>
                   )}
                   {!!googleClientId && (
-                    <>
-                      {!isLoading && (
-                        <button className="app-header__auth-btn" type="button" onClick={onLoginClick}>
-                          Log in
-                        </button>
-                      )}
-                      <span
-                        className="app-header__google-login-mount"
-                        ref={googleLoginMountRef}
-                        aria-hidden="true"
-                      >
-                        <GoogleLogin
-                          onSuccess={(res) => onLoginSuccess(res?.credential || '')}
-                          onError={() => reportGoogleLoginError()}
-                          useOneTap={false}
-                        />
-                      </span>
-                    </>
+                    <div className="app-header__google-signin" title="Sign in with Google">
+                      <GoogleLogin
+                        click_listener={() => clearAuthError()}
+                        containerProps={{ className: 'app-header__gsi-button-root' }}
+                        onSuccess={(res) => onLoginSuccess(res?.credential || '')}
+                        onError={() => reportGoogleLoginError()}
+                        useOneTap={false}
+                        type="icon"
+                        theme="filled_black"
+                        size="medium"
+                      />
+                    </div>
                   )}
                 </>
               )}
