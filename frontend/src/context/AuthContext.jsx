@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
   function logout() {
     authService.clearToken()
     setMe(null)
+    window.location.reload()
   }
 
   useEffect(() => {
