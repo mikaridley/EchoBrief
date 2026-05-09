@@ -1,3 +1,5 @@
+import sys
+import traceback
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -13,20 +15,29 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if settings.auth_enabled:
-            if not settings.mongo_uri:
-                raise RuntimeError('AUTH_ENABLED=1 requires MONGO_URI')
-            if not settings.google_client_id:
-                raise RuntimeError('AUTH_ENABLED=1 requires GOOGLE_CLIENT_ID')
+        try:
+            if settings.auth_enabled:
+                if not settings.mongo_uri:
+                    raise RuntimeError('AUTH_ENABLED=1 requires MONGO_URI')
+                if not settings.google_client_id:
+                    raise RuntimeError('AUTH_ENABLED=1 requires GOOGLE_CLIENT_ID')
 
-        if settings.mongo_uri:
-            client = create_mongo_client()
-            app.state.mongo_client = client
-            app.state.mongo_db = client[settings.mongo_db_name]
-        yield
-        client = getattr(app.state, 'mongo_client', None)
-        if client is not None:
-            client.close()
+            if settings.mongo_uri:
+                client = create_mongo_client()
+                app.state.mongo_client = client
+                app.state.mongo_db = client[settings.mongo_db_name]
+        except Exception:
+            # Render (and some hosts) swallow or truncate default logging; force a visible traceback.
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
+            raise
+
+        try:
+            yield
+        finally:
+            client = getattr(app.state, 'mongo_client', None)
+            if client is not None:
+                client.close()
 
     app = FastAPI(title='EchoBrief API', version='0.1.0', lifespan=lifespan)
 
@@ -50,5 +61,10 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+try:
+    app = create_app()
+except Exception:
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.flush()
+    raise
 
