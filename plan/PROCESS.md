@@ -307,4 +307,29 @@ decisions - >should appear as bullets under a title.
 
 action items -> should appear as bullets and the on who is the owner should appear ad the end of the line in its rounded icon. -->
 
-<!-- problems: refognize too many participants - we should updrage the script.  the transcript it not per person-->
+<!-- problems: refognize too many participants - we should updrage the script.  the transcript it not per person - Speaker identification is best-effort; accurate diarization requires audio diarization models and more compute; for this task we prioritized the requested Whisper+LLM pipeline.-->
+
+<!-- prompt example for deployment: 
+"I am finishing a Full Stack take-home assignment and need to choose a deployment strategy.
+
+My Tech Stack:
+
+Backend: Python FastAPI (needs to handle file uploads and long-running API calls to OpenAI/Whisper).
+
+Frontend: React (Vite).
+
+Database: MongoDB (Atlas).
+
+External APIs: OpenAI (requires secure storage for API Keys).
+
+My Requirements:
+
+Speed of Deployment: I need to submit this in a few hours.
+
+Cost: Preferably free tier or very low cost.
+
+Complexity: I want to avoid complex AWS/GCP setups if possible.
+
+Reliability: The backend must not time out while waiting for the AI to finish transcribing. -->
+
+<!-- problem: when i deploy how do i save my credits? -->

@@ -1,0 +1,75 @@
+# Deploy plan — FastAPI + MongoDB + OpenAI
+
+## Goal
+Deploy the project so:
+- Frontend is served fast via CDN (static hosting)
+- Backend (FastAPI) runs as a web service
+- MongoDB is managed (no self-hosting)
+- Secrets (OpenAI key, Mongo URI) are stored as environment variables (never in git)
+
+## Recommended setup (best default)
+- **Frontend**: Vercel (Static / SPA)
+- **Backend**: Render (Web Service)
+- **Database**: MongoDB Atlas
+
+Why I pick this over “everything in one place”:
+- Vercel is usually the smoothest + fastest for React static hosting (CDN, previews)
+- Render is beginner-friendly for FastAPI, env vars, logs, and redeploys
+- Atlas is the standard managed Mongo choice
+
+Trade-offs vs alternatives:
+- One platform (Render for both FE+BE): simpler, but FE CDN/preview UX is usually weaker than Vercel
+- Fly.io for backend: more control/performance, but more ops learning
+
+## Assumptions I’m making (so the steps are concrete)
+- Frontend is a Vite SPA and talks to backend via an API base URL
+- Backend runs with Uvicorn
+- Mongo is accessed via a connection string (Atlas URI)
+- OpenAI calls happen only from backend (good: keys stay server-side)
+
+## Questions (answer these before doing the final config)
+1) Where is the backend entrypoint? (`backend/main.py` vs `backend/app/main.py` etc.)
+2) How do you connect to Mongo today? (Motor async, PyMongo, or ODM like Beanie)
+3) What’s your frontend build output? (Vite default: `dist/`)
+4) Do you need file uploads stored permanently (S3) or only temporary processing?
+
+## Execution steps
+
+### Step A — MongoDB Atlas (DB)
+- Create a free/paid cluster
+- Create a DB user + allowlist Render outbound IPs (or allow all for MVP, then lock down)
+- Save the connection string as `MONGODB_URI`
+
+### Step B — Backend on Render
+- Create a **Web Service** from the repo
+- Root directory: `backend`
+- Build command:
+  - `pip install -r requirements.txt`
+- Start command (example):
+  - `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Add env vars:
+  - `OPENAI_API_KEY`
+  - `MONGODB_URI`
+  - Any other config used by the app (model name, limits, etc.)
+- Ensure CORS allows the Vercel domain (and local dev if needed)
+
+### Step C — Frontend on Vercel
+- Import repo in Vercel
+- Root directory: `frontend`
+- Build command: `npm ci && npm run build`
+- Output: `dist`
+- Add env var:
+  - `VITE_API_BASE_URL` = your Render backend URL (example: `https://your-api.onrender.com`)
+- (If SPA) Add rewrite so all routes go to `index.html`
+
+### Step D — Smoke test
+- Call backend `/api/health` (or equivalent)
+- Upload an audio file → verify response
+- Confirm DB writes/reads (if implemented)
+- Confirm OpenAI calls succeed from production
+
+## Rollback & safety
+- Never commit `.env`
+- Rotate `OPENAI_API_KEY` if it was ever leaked
+- Add basic rate limiting and file size limits if public
+
