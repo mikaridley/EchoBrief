@@ -287,52 +287,22 @@ Asset Integrity: Ensure the assets/ subfolders for fonts and imgs are created an
 
 Context: I am implementing a design provided via Figma. The code should be clean, semantic, and ready for high-fidelity UI implementation. -->
 
-<!-- data arrange prompt: Role: You are a Frontend-Aware Data Architect. Your task is to transform meeting transcripts into a structured JSON object specifically designed to populate a React-based user interface.
+<!-- data arrange prompt: lets arrange the result with only the data we need:
 
-Objective: Extract insights from the provided transcript and format them according to the strict UI requirements below.
+summary- > the data under should appear first under the summary as a paragragh.
 
-JSON Schema & UI Mapping Instructions:
 
-summary (String): - UI Context: Appears at the top of the page as the main overview.
 
-Requirement: Provide a single, cohesive, and professional paragraph summarizing the meeting.
+transcript - > with "Transcript" title should be under that as closed and an arrow that point up and when we click on it it will open the transcript.
 
-transcript (String): - UI Context: Displayed inside a collapsible accordion/dropdown.
 
-Requirement: Provide the full, formatted text of the meeting.
 
-participants (Array of Objects): - UI Context: Displayed as a horizontal row of rounded Avatars with hover tooltips.
+participants - > should appear as nice round divs with prson icon and when we hover we see the names. it should be in a line. each speaker in its own color.
 
-Requirement: Each object must include:
 
-id: A unique slug (e.g., "speaker_1").
 
-name: The identified name or generic "Speaker X".
+decisions - >should appear as bullets under a title.
 
-color_hex: A distinct, high-contrast background color hex code for their Avatar.
 
-initials: 1-2 letters to be displayed inside the circle.
 
-decisions (Array of Strings): - UI Context: A bulleted list under the "Decisions" section.
-
-Requirement: Extract concrete agreements or conclusions.
-
-action_items (Array of Objects): - UI Context: A checklist where the owner's Avatar appears at the end of each row.
-
-Requirement: Each object must include:
-
-task: The description of the work.
-
-owner_id: Must strictly match the id from the participants array. Use null if no owner is found.
-
-due_date: A formatted string for the deadline.
-
-Strict Constraints:
-
-Return ONLY the JSON object.
-
-No markdown code blocks (e.g., no ```json).
-
-Ensure 100% referential integrity between action_items.owner_id and participants.id.
-
-Do not include mentioned third parties in the participants list—only active speakers. -->
+action items -> should appear as bullets and the on who is the owner should appear ad the end of the line in its rounded icon. -->

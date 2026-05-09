@@ -2,10 +2,204 @@
   display: grid;
   gap: 1rem;
 
+  .audio-upload__result-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
   .audio-upload__result-title {
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--brand-one);
+  }
+
+  .audio-upload__summary {
+    margin: 0;
+    color: var(--brand-three);
+    opacity: 0.92;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .audio-upload__result-section {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .audio-upload__section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--brand-one);
+  }
+
+  .audio-upload__participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .audio-upload__participant {
+    --speaker-clr: var(--brand-one);
+
+    display: grid;
+    place-items: center;
+
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--speaker-clr), transparent 40%);
+
+    background: color-mix(in srgb, var(--speaker-clr), transparent 86%);
+    color: var(--speaker-clr);
+    cursor: default;
+
+    transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      background: color-mix(in srgb, var(--speaker-clr), transparent 82%);
+      border-color: color-mix(in srgb, var(--speaker-clr), transparent 25%);
+    }
+
+    .audio-upload__participant-icon {
+      display: grid;
+      place-items: center;
+
+      svg {
+        inline-size: 1.05rem;
+        block-size: 1.05rem;
+      }
+    }
+
+    .audio-upload__participant-initials {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      opacity: 0.9;
+      margin-block-start: -0.15rem;
+    }
+  }
+
+  .audio-upload__participant:nth-child(3n + 1) {
+    --speaker-clr: var(--brand-one);
+  }
+
+  .audio-upload__participant:nth-child(3n + 2) {
+    --speaker-clr: var(--brand-two);
+  }
+
+  .audio-upload__participant:nth-child(3n + 3) {
+    --speaker-clr: var(--brand-three);
+  }
+
+  .audio-upload__transcript {
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--brand-one), transparent 55%);
+    background: color-mix(in srgb, var(--brand-one), transparent 92%);
+
+    &[open] {
+      .audio-upload__transcript-chevron {
+        transform: rotate(180deg);
+      }
+    }
+
+    .audio-upload__transcript-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+    }
+
+    .audio-upload__transcript-chevron {
+      display: grid;
+      place-items: center;
+
+      transition: transform 140ms ease;
+
+      svg {
+        inline-size: 1.15rem;
+        block-size: 1.15rem;
+        color: var(--brand-one);
+      }
+    }
+
+    .audio-upload__transcript-body {
+      padding: 0 1rem 1rem;
+    }
+
+    .audio-upload__transcript-text {
+      margin: 0;
+      color: var(--brand-three);
+      opacity: 0.92;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+  }
+
+  .audio-upload__list {
+    margin: 0;
+    padding-inline-start: 1.15rem;
+    display: grid;
+    gap: 0.5rem;
+
+    .audio-upload__list-item {
+      color: var(--brand-three);
+      opacity: 0.92;
+      line-height: 1.6;
+    }
+  }
+
+  .audio-upload__action-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+
+    .audio-upload__action-task {
+      min-inline-size: 0;
+    }
+  }
+
+  .audio-upload__owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    padding: 0.25rem 0.45rem;
+    border-radius: 999px;
+
+    border: 1px solid color-mix(in srgb, var(--brand-two), transparent 50%);
+    background: color-mix(in srgb, var(--brand-two), transparent 88%);
+    color: var(--brand-two);
+
+    .audio-upload__owner-icon {
+      display: grid;
+      place-items: center;
+
+      svg {
+        inline-size: 0.95rem;
+        block-size: 0.95rem;
+      }
+    }
+
+    .audio-upload__owner-initials {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
   }
 
   .audio-upload__result-block {
