@@ -6,7 +6,7 @@ import { Menu, X } from 'lucide-react'
 import { useAuth } from '../context/useAuth.js'
 
 export function AppHeader() {
-  const { me, isLoading, onLoginSuccess, logout } = useAuth()
+  const { me, isLoading, authError, clearAuthError, reportGoogleLoginError, onLoginSuccess, logout } = useAuth()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
   const googleLoginMountRef = useRef(null)
   const menuId = useId()
@@ -14,6 +14,7 @@ export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   function onLoginClick() {
+    clearAuthError()
     const el = googleLoginMountRef.current
     if (!el) return
 
@@ -99,35 +100,50 @@ export function AppHeader() {
             About
           </NavLink>
 
-          <div className="app-header__auth" aria-label="Authentication">
-          {isLoading && <span className="app-header__auth-status">…</span>}
+          <div className="app-header__auth-stack">
+            <div className="app-header__auth" aria-label="Authentication">
+              {isLoading && !me && <span className="app-header__auth-status">…</span>}
 
-          {!isLoading && !me && (
-            <>
-              {!googleClientId && <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>}
-              {!!googleClientId && (
+              {!me && (
                 <>
-                  <button className="app-header__auth-btn" type="button" onClick={onLoginClick}>
-                    Log in
-                  </button>
-                  <span className="app-header__google-login-mount" ref={googleLoginMountRef} aria-hidden="true">
-                    <GoogleLogin
-                      onSuccess={(res) => onLoginSuccess(res?.credential || '')}
-                      onError={() => {}}
-                      useOneTap={false}
-                    />
-                  </span>
+                  {!googleClientId && (
+                    <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>
+                  )}
+                  {!!googleClientId && (
+                    <>
+                      {!isLoading && (
+                        <button className="app-header__auth-btn" type="button" onClick={onLoginClick}>
+                          Log in
+                        </button>
+                      )}
+                      <span
+                        className="app-header__google-login-mount"
+                        ref={googleLoginMountRef}
+                        aria-hidden="true"
+                      >
+                        <GoogleLogin
+                          onSuccess={(res) => onLoginSuccess(res?.credential || '')}
+                          onError={() => reportGoogleLoginError()}
+                          useOneTap={false}
+                        />
+                      </span>
+                    </>
+                  )}
                 </>
               )}
-            </>
-          )}
 
-          {!isLoading && me && (
-            <button className="app-header__auth-btn" type="button" onClick={logout} title={me.email}>
-              Sign out
-            </button>
-          )}
-        </div>
+              {!isLoading && me && (
+                <button className="app-header__auth-btn" type="button" onClick={logout} title={me.email}>
+                  Sign out
+                </button>
+              )}
+            </div>
+            {authError && !me && (
+              <p className="app-header__auth-error" role="alert">
+                {authError}
+              </p>
+            )}
+          </div>
         </nav>
 
 

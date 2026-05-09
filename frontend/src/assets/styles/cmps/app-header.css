@@ -95,48 +95,64 @@
       }
     }
 
-    .app-header__auth {
+    .app-header__auth-stack {
       display: flex;
-      align-items: center;
-      gap: 2rem;
-      position: relative;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.35rem;
+      max-inline-size: min(22rem, 70vw);
 
-      &::before {
-        content: "";
-        inline-size: 0.05rem;
-        block-size: 1.25rem;
-        background: var(--prime-text);
+      .app-header__auth-error {
+        margin: 0;
+        text-align: end;
+        font-size: 0.8125rem;
+        line-height: 1.35;
+        color: var(--warning);
       }
 
-      .app-header__auth-status {
-        color: color-mix(in oklab, var(--prime-text), transparent 35%);
-      }
+      .app-header__auth {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        position: relative;
 
-      .app-header__google-login-mount {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .app-header__auth-btn {
-        border: 0;
-        padding: 0;
-
-        background: transparent;
-        font-weight: 600;
-        font-size: 1rem;
-        color: var(--prime-text);
-        cursor: pointer;
-
-        &:hover {
-          color: var(--brand-two);
+        &::before {
+          content: "";
+          inline-size: 0.05rem;
+          block-size: 1.25rem;
+          background: var(--prime-text);
         }
 
-        &:focus-visible {
-          outline: 0.125rem solid
-            color-mix(in oklab, var(--brand-one), transparent 35%);
-          outline-offset: 0.125rem;
+        .app-header__auth-status {
+          color: color-mix(in oklab, var(--prime-text), transparent 35%);
+        }
+
+        .app-header__google-login-mount {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .app-header__auth-btn {
+          border: 0;
+          padding: 0;
+
+          background: transparent;
+          font-weight: 600;
+          font-size: 1rem;
+          color: var(--prime-text);
+          cursor: pointer;
+
+          &:hover {
+            color: var(--brand-two);
+          }
+
+          &:focus-visible {
+            outline: 0.125rem solid
+              color-mix(in oklab, var(--brand-one), transparent 35%);
+            outline-offset: 0.125rem;
+          }
         }
       }
     }
@@ -199,16 +215,25 @@
         transform: translateX(0);
       }
 
-      .app-header__auth {
-        gap: 1rem;
-        justify-content: flex-start;
+      .app-header__auth-stack {
+        align-items: center;
+        max-inline-size: none;
 
-        .app-header__auth-btn {
-          font-size: 1.2rem;
+        .app-header__auth-error {
+          text-align: center;
         }
 
-        &::before {
-          display: none;
+        .app-header__auth {
+          gap: 1rem;
+          justify-content: flex-start;
+
+          .app-header__auth-btn {
+            font-size: 1.2rem;
+          }
+
+          &::before {
+            display: none;
+          }
         }
       }
     }
