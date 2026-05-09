@@ -1,4 +1,4 @@
-# Deploy plan — FastAPI + MongoDB + OpenAI
+# Deploy plan — FastAPI + MongoDB Atlas + OpenAI
 
 ## Goal
 Deploy the project so:
@@ -23,22 +23,22 @@ Trade-offs vs alternatives:
 
 ## Assumptions I’m making (so the steps are concrete)
 - Frontend is a Vite SPA and talks to backend via an API base URL
-- Backend runs with Uvicorn
+- Backend runs with Uvicorn from `backend/app/main.py` (`app.main:app`)
 - Mongo is accessed via a connection string (Atlas URI)
 - OpenAI calls happen only from backend (good: keys stay server-side)
 
-## Questions (answer these before doing the final config)
-1) Where is the backend entrypoint? (`backend/main.py` vs `backend/app/main.py` etc.)
-2) How do you connect to Mongo today? (Motor async, PyMongo, or ODM like Beanie)
-3) What’s your frontend build output? (Vite default: `dist/`)
-4) Do you need file uploads stored permanently (S3) or only temporary processing?
+## Status (repo truth)
+- Backend entrypoint is: `backend/app/main.py`
+- Mongo driver is: Motor (`motor.motor_asyncio.AsyncIOMotorClient`)
+- Frontend build output is: Vite `dist/`
+- Uploads are processed temporarily (no permanent storage)
 
 ## Execution steps
 
 ### Step A — MongoDB Atlas (DB)
 - Create a free/paid cluster
 - Create a DB user + allowlist Render outbound IPs (or allow all for MVP, then lock down)
-- Save the connection string as `MONGODB_URI`
+- Save the connection string as `MONGO_URI` (this repo’s env var name)
 
 ### Step B — Backend on Render
 - Create a **Web Service** from the repo
@@ -46,20 +46,26 @@ Trade-offs vs alternatives:
 - Build command:
   - `pip install -r requirements.txt`
 - Start command (example):
-  - `uvicorn main:app --host 0.0.0.0 --port $PORT`
+  - `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Add env vars:
   - `OPENAI_API_KEY`
-  - `MONGODB_URI`
+  - `MONGO_URI`
+  - `MONGO_DB_NAME` (default: `echobrief`)
+  - `ENV=prod`
+  - `CORS_ORIGINS=https://<your-vercel-domain>`
+  - `AUTH_ENABLED=1` (recommended in production)
+  - `GOOGLE_CLIENT_ID` (required if auth is enabled)
   - Any other config used by the app (model name, limits, etc.)
 - Ensure CORS allows the Vercel domain (and local dev if needed)
 
 ### Step C — Frontend on Vercel
 - Import repo in Vercel
 - Root directory: `frontend`
-- Build command: `npm ci && npm run build`
+- Build command: `npm ci && npm run build` (or Vercel default)
 - Output: `dist`
 - Add env var:
   - `VITE_API_BASE_URL` = your Render backend URL (example: `https://your-api.onrender.com`)
+  - `VITE_GOOGLE_CLIENT_ID` = same Google OAuth client id you use in the backend
 - (If SPA) Add rewrite so all routes go to `index.html`
 
 ### Step D — Smoke test

@@ -2,6 +2,9 @@
 .env.*
 !.env.example
 
+# Local notes / working docs
+plan/insights.md
+
 # Python
 __pycache__/
 *.py[cod]
