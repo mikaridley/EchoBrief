@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useEffect, useId, useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { useAuth } from '../context/useAuth.js'
+import { useAuth } from '../auth/auth.context.js'
 
 export function AppHeader() {
   const { me, isLoading, authError, clearAuthError, reportGoogleLoginError, onLoginSuccess, logout } = useAuth()

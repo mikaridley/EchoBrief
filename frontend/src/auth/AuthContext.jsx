@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { authService } from '../services/auth.service.js'
+import { authService } from './auth.service.js'
 import { fetchMe } from '../services/user.service.js'
 import { AuthContext } from './auth.context.js'
 
@@ -84,4 +84,3 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-

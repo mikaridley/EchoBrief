@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app.config.js'
-import { authService } from './auth.service.js'
+import { authService } from '../auth/auth.service.js'
 
 export async function fetchMe() {
   const res = await fetch(`${appConfig.apiBaseUrl}/api/auth/me`, {

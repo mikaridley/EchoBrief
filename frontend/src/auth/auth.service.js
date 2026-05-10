@@ -25,4 +25,3 @@ function getAuthHeaders() {
   if (!token) return {}
   return { Authorization: `Bearer ${token}` }
 }
-

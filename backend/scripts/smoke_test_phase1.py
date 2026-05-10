@@ -11,7 +11,6 @@ def post_json(url: str, payload: dict) -> bytes:
     with urllib.request.urlopen(req) as resp:
         return resp.read()
 
-
 def post_multipart_file(url: str, field: str, filename: str, content_type: str, content: bytes) -> bytes:
     boundary = '----boundaryEchoBriefPhase1'
     body = b''.join(
@@ -33,7 +32,6 @@ def post_multipart_file(url: str, field: str, filename: str, content_type: str, 
     with urllib.request.urlopen(req) as resp:
         return resp.read()
 
-
 def build_dummy_wav_bytes() -> bytes:
     buf = io.BytesIO()
     w = wave.open(buf, 'wb')
@@ -44,7 +42,6 @@ def build_dummy_wav_bytes() -> bytes:
     w.writeframes(frames)
     w.close()
     return buf.getvalue()
-
 
 def main() -> None:
     print('health:', urllib.request.urlopen('http://127.0.0.1:8000/api/health').read().decode())
@@ -70,7 +67,6 @@ def main() -> None:
         content=build_dummy_wav_bytes(),
     )
     print('process:', process_resp.decode())
-
 
 if __name__ == '__main__':
     main()

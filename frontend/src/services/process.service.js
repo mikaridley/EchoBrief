@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app.config.js'
-import { authService } from './auth.service.js'
+import { authService } from '../auth/auth.service.js'
 
 export async function uploadAudioForProcessing(file) {
   if (!file) throw new Error('Missing file')

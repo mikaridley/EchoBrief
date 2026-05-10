@@ -5,7 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import './assets/styles/main.css'
 
 import RootCmp from './RootCmp.jsx'
-import { AuthProvider } from './context/AuthContext.jsx'
+import { AuthProvider } from './auth/AuthContext.jsx'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 

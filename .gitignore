@@ -4,6 +4,7 @@
 
 # Local notes / working docs
 plan/insights.md
+docs/
 
 # Python
 __pycache__/
@@ -23,19 +24,22 @@ dist/
 build/
 *.egg-info/
 
-# Node / frontend
+# Node / frontend (includes patterns from former frontend/.gitignore)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 .pnp/
 .pnp.js
 dist/
+dist-ssr/
 build/
 .next/
 .nuxt/
 .vite/
+*.local
 
 # Logs
 logs/
@@ -45,13 +49,22 @@ logs/
 backend/.cache/
 backend/.env
 
+# Backend dev-only scripts (optional local tooling)
+backend/scripts/
+
 # OS / editor
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 .idea/
+# VS Code / Cursor workspace (entire folder ignored; no tracked recommendations)
 .vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Cursor
 .cursor-cache/

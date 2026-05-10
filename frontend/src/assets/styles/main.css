@@ -1,6 +1,5 @@
 @import './setup/_variables.css';
 @import './setup/_typography.css';
-@import './setup/_mq.css';
 
 @import './basics/base.css';
 @import './basics/layout.css';
