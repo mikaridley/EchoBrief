@@ -128,7 +128,7 @@ Never commit real `.env` files or API keys. The repo should rely on examples plu
 ## Architecture notes (short)
 
 - The browser obtains a **Google ID token** and, in the current demo-oriented flow, stores it in **`sessionStorage`** and sends it as **`Authorization: Bearer`** to the API. The API verifies the token when `AUTH_ENABLED=1`.
-- For production hardening, a common next step is a **server session** in an **`HttpOnly` cookie** after a one-time token exchange; that is tracked in the backlog in [`plan/PROCESS.md`](plan/PROCESS.md).
+- For production hardening, a common next step is a **server session** in an **`HttpOnly` cookie** after a one-time token exchange; that is tracked in the backlog in [`PROCESS.md`](PROCESS.md).
 
 ---
 
