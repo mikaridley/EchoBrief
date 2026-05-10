@@ -2,7 +2,7 @@ import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useEffect, useId, useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Loader2, Menu, X } from 'lucide-react'
 import { useAuth } from '../auth/auth.context.js'
 
 export function AppHeader() {
@@ -90,14 +90,22 @@ export function AppHeader() {
 
           <div className="app-header__auth-stack">
             <div className="app-header__auth" aria-label="Authentication">
-              {isLoading && !me && <span className="app-header__auth-status">…</span>}
-
               {!me && (
                 <>
                   {!googleClientId && (
                     <span className="app-header__auth-status">Set VITE_GOOGLE_CLIENT_ID</span>
                   )}
-                  {!!googleClientId && (
+                  {!!googleClientId && isLoading && (
+                    <div
+                      className="app-header__auth-loader"
+                      role="status"
+                      aria-live="polite"
+                      aria-label="Checking sign-in status"
+                    >
+                      <Loader2 aria-hidden />
+                    </div>
+                  )}
+                  {!!googleClientId && !isLoading && (
                     <div className="app-header__google-signin" title="Sign in with Google">
                       <GoogleLogin
                         click_listener={() => clearAuthError()}
