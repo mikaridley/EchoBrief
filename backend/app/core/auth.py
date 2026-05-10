@@ -11,6 +11,9 @@ from pymongo import ReturnDocument
 from .config import get_settings
 from .db import get_db_from_app
 
+# Effective "unlimited" cap for admins and local auth-off dev (not incremented for admins).
+ADMIN_SUMMARIES_TOTAL_LIMIT = 10**9
+
 
 @dataclass(frozen=True)
 class AuthedUser:
@@ -49,7 +52,12 @@ async def get_current_user(request: Request) -> AuthedUser:
                     'message': 'AUTH_ENABLED=0 is only allowed in ENV=local',
                 },
             )
-        return AuthedUser(email='dev@local', enabled=True, role='admin', summaries_total_limit=10**9)
+        return AuthedUser(
+            email='dev@local',
+            enabled=True,
+            role='admin',
+            summaries_total_limit=ADMIN_SUMMARIES_TOTAL_LIMIT,
+        )
 
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail='Missing GOOGLE_CLIENT_ID. Set it in backend/.env')
@@ -116,6 +124,9 @@ async def get_current_user(request: Request) -> AuthedUser:
         limit = int(limits.get('summariesTotalLimit', base_limit))
         used = int(limits.get('summariesTotalUsed', 0))
 
+    if role == 'admin':
+        limit = ADMIN_SUMMARIES_TOTAL_LIMIT
+
     return AuthedUser(
         email=email,
         name=name,
@@ -137,6 +148,17 @@ async def require_enabled_user(user: AuthedUser = Depends(get_current_user)) -> 
 
 
 async def consume_summary_quota(request: Request, user: AuthedUser = Depends(require_enabled_user)) -> AuthedUser:
+    if user.role == 'admin':
+        return AuthedUser(
+            email=user.email,
+            name=user.name,
+            picture=user.picture,
+            enabled=True,
+            role=user.role,
+            summaries_total_limit=ADMIN_SUMMARIES_TOTAL_LIMIT,
+            summaries_total_used=user.summaries_total_used,
+        )
+
     # Atomically increments used count if still below limit.
     db = get_db_from_app(request.app)
     users = db.get_collection('users')
