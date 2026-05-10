@@ -11,6 +11,7 @@ for identical inputs.
 
 import hashlib
 import json
+import logging
 import tempfile
 import time
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ from pydantic import ValidationError
 from ..paths import resolve_backend_path
 from ..schemas.meeting import ActionItem
 
+
+logger = logging.getLogger(__name__)
 
 _recent_summarize_calls: list[float] = []
 
@@ -233,8 +236,12 @@ def _write_attempts_file(cache_path: Path, payload: dict) -> None:
         if tmp_path and tmp_path.exists() and tmp_path != cache_path:
             try:
                 tmp_path.unlink(missing_ok=True)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.warning(
+                    'Failed to remove summarize cache temp file %s: %s',
+                    tmp_path,
+                    e,
+                )
 
 
 def _append_attempt(cache_path: Path, *, transcript_hash: str, attempt: dict) -> None:

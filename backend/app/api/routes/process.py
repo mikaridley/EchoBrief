@@ -162,6 +162,8 @@ async def process_audio(
                     status_code=413,
                     detail=f'File too large. Max is {settings.max_upload_mb}MB',
                 ) from e
+            if e.code == 'file_unreadable':
+                raise HTTPException(status_code=400, detail=str(e)) from e
             if e.code == 'timeout':
                 raise HTTPException(status_code=504, detail=str(e)) from e
             if e.code == 'auth_failed':

@@ -100,10 +100,16 @@ def transcribe_audio(
 
         if max_bytes is not None:
             try:
-                if audio_path.stat().st_size > max_bytes:
-                    raise TranscriptionError('File too large', code='file_too_large')
-            except OSError:
-                pass
+                size = audio_path.stat().st_size
+            except OSError as e:
+                logger.exception('Could not stat audio file for size check')
+                raise TranscriptionError(
+                    'Could not read audio file',
+                    code='file_unreadable',
+                    provider_message=str(e) or type(e).__name__,
+                ) from e
+            if size > max_bytes:
+                raise TranscriptionError('File too large', code='file_too_large')
 
         with open(audio_path, 'rb') as f:
             try:
@@ -161,6 +167,10 @@ def transcribe_audio(
         if temp_path and os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.warning(
+                    'Failed to remove temp audio file %s: %s',
+                    temp_path,
+                    e,
+                )
 
