@@ -66,9 +66,3 @@ because Whisper-1 never produces those labels. The prompt + ownership check are 
 - **Versus adding diarization (pyannote / external service)**: out of scope, expensive, big change. We'd revisit later if quality demands it.
 
 ---
-
-## Questions (answer before I implement)
-1. **Confidence threshold for real names**: should the prompt say "use a real name **only when explicitly self-introduced or directly addressed**" (strict), or allow "**strongly implied by context**" (looser, more risk of wrong attribution)?
-   → **both**: self-introduced or strongly implied by context.
-2. **Gender hint** (carried over from plan 003 Q2): do you still want the LLM to add `(female)` / `(male)` to placeholders like `Speaker 1 (female)` when audible? Or drop that idea now that Whisper-1 gives us no audio cues anyway?
-   → **drop it**.

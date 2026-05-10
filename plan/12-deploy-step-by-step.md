@@ -73,7 +73,3 @@
 - If backend crashes on startup with `AUTH_ENABLED=1 requires MONGO_URI` / `GOOGLE_CLIENT_ID`, set those env vars on Render.
 - If browser shows CORS errors, fix `CORS_ORIGINS` to exactly match the Vercel domain (scheme + host).
 
-## Questions to confirm (so we can make this “copy/paste exact”)
-- Are you deploying exactly on **Vercel + Render + Atlas**, or a different host?
-- Do you want to keep Atlas open to `0.0.0.0/0` for MVP, or lock it down now?
-

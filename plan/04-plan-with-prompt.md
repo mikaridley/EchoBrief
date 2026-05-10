@@ -1,4 +1,4 @@
-## Phase 3 — Summarization (LLM) plan
+## Summarization (LLM) plan
 
 ### Goal
 Given a transcript string, produce **strict JSON** with:
@@ -100,11 +100,4 @@ Bad output:
 
 ---
 
-## Questions (answer before “final prompt lock”)
-1. **Summarization model**: do you want `gpt-5.4-mini` (cheap) or a higher-quality model for better extraction?
-yes i want the cheapest
-2. **Participants**: should we try to infer speaker names (“Speaker 1/2”) if names aren’t present, or keep `[]`?
-yes speaker 1 and 2 sounds good, if you can identify if its female/male add that.
-3. **Summary style**: 1 paragraph max, or allow 3–5 bullet points?
-bullet boints is the best
 

@@ -147,10 +147,3 @@ This helps you answer: “who burned credits?”
   - rate limit triggers properly
 
 ---
-
-## Open questions (answer these before we implement)
-1) Confirmed: new logins default to `enabled=false`.
-2) Confirmed: blocked users see “Contact admin”.
-3) Confirmed: `summariesTotalLimit = 5` (total, not per-day).
-4) Are you deploying as **single instance** (in-memory anti-spam is fine), or might you scale to multiple instances (prefer Redis for anti-spam)? answer: single instance
-

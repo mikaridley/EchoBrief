@@ -1,4 +1,4 @@
-# Phase 1 — Backend skeleton (FastAPI)
+# Backend skeleton (FastAPI)
 
 ## Decisions (based on our chat)
 - **Python**: 3.12 (latest stable → best performance/features; 3.11 only if a dependency lags)
@@ -34,7 +34,7 @@ backend/
   .env.example
 ```
 
-## Phase 1 endpoints
+## MVP endpoints
 - `GET /api/health` → `{ "ok": true }`
 - `POST /api/process` (multipart `file`) → mocked JSON in our contract
 - `POST /api/docx` (JSON body) → returns a `.docx` download
@@ -43,8 +43,4 @@ backend/
 - Thin route handlers (HTTP layer) + services (logic) + schemas (contracts)
 - Env-driven settings (CORS origins, upload size limit)
 - Don’t load huge uploads into RAM; stream to disk and clean up
-
-## Check understanding (answer in 1–2 lines)
-1) Why is “stream-to-temp-file” safer than “read the whole upload into memory”?
-2) In your own words: what problem does Poetry solve that `requirements.txt` doesn’t?
 

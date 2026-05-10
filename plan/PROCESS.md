@@ -5,7 +5,7 @@
 
 1. **Full transcript** of the recording  
 2. **Meeting summary**  
-3. **Participant list** (when the audio/transcript allows identifying them — best-effort)  
+3. **Participant list** (when the audio/transcript allows identifying them — best-effort, not true diarization unless you add it later)  
 4. **Decisions** that were made in the meeting  
 5. **Action items** (tasks to follow up on)  
 
@@ -27,7 +27,7 @@ Then I wrote the **pipeline** down clearly, step by step, so I always knew what 
 1. User uploads a file  
 2. Backend stores it **locally and temporarily**  
 3. Audio is sent to the **Whisper** API for transcription  
-4. Transcript text is passed to an **LLM - OpenAI** with a **structured system-style prompt**  
+4. Transcript text is passed to an **LLM** with a **structured system-style prompt**  
 5. **Processed JSON** is returned to the frontend  
 
 From there I split the work into layers and phases:
@@ -52,81 +52,77 @@ Splitting into routes / services / schemas makes testing easier, makes it possib
 ## 2. How I used AI during development
 
 ### 2.1 Cursor / coding assistant (example prompts)
+Prompt Examples:
 
-Prompt examples:
+1. **Frontend skeleton**  
+   "Role: Expert React & Frontend Architect
 
-#### 1. Frontend skeleton
+   Task: Initialize a React frontend using Vite and set up a specific, modular folder architecture.
 
-```
-Role: Expert React & Frontend Architect.
+   Core Technology Stack:
 
-Task: Initialize a React frontend using Vite and a modular CSS layout.
+   Framework: React (Vite)
+   Styling: Modular CSS (following the provided directory structure)> Directory Structure Requirements: Create the following folder hierarchy exactly as specified. Ensure empty directories contain a .gitkeep if necessary to maintain the structure.
+   In main.css, import all files from setup/, basics/, cmps/, and pages/ to ensure a single source of truth for styles.
+      src/
+      ├── assets/
+      │   ├── fonts/
+      │   ├── imgs/
+      │   └── styles/
+      │       ├── basics/
+      │       │   ├── base.css
+      │       │   └── layout.css
+      │       ├── cmps/
+      │       ├── pages/
+      │       ├── setup/
+      │       │   ├── _mq.css
+      │       │   ├── _typography.css
+      │       │   └── _variables.css
+      │       └── main.css
+      ├── cmps/
+      ├── config/
+      ├── pages/
+      ├── services/
+      ├── utils/
+      ├── index.jsx
+      └── RootCmp.jsx
+      "
 
-Stack: React (Vite), modular CSS. Empty folders should include .gitkeep where needed. In main.css, import everything under setup/, basics/, cmps/, and pages/ so styles have one entry point.
+2. **Data-to-UI Mapping Specification**  
+   "Role: Expert Frontend Developer and UI/UX Designer.
 
-Target src/ tree:
+   Task: Transform a JSON data object into a clean, modern, and interactive user interface. You must map specific data fields to the following UI components while maintaining a professional aesthetic:
 
-src/
-├── assets/
-│   ├── fonts/
-│   ├── imgs/
-│   └── styles/
-│       ├── basics/
-│       │   ├── base.css
-│       │   └── layout.css
-│       ├── cmps/
-│       ├── pages/
-│       ├── setup/
-│       │   ├── _mq.css
-│       │   ├── _typography.css
-│       │   └── _variables.css
-│       └── main.css
-├── cmps/
-├── config/
-├── pages/
-├── services/
-├── utils/
-├── index.jsx
-└── RootCmp.jsx
-```
+   Summary (Priority 1): Display the summary data at the very top of the page. It should be formatted as a high-readability paragraph to serve as the executive overview.
 
-#### 2. Data-to-UI mapping specification
+   Transcript (Collapsible): Create a section titled "Transcript." This must be a collapsible accordion that is closed by default. Include a chevron/arrow icon that points up when closed and rotates when clicked to reveal the full text.
 
-```
-Role: Expert Frontend Developer and UI/UX Designer.
+   Participants (Visual Icons): Map the participants data to a horizontal row of rounded avatar divs:
+   Each div should contain a person icon.
+   Assign a unique, distinct background color to each participant.
+   Implement a hover state/tooltip that displays the participant’s full name.
 
-Task: Transform a JSON data object into a clean, modern, and interactive user interface. You must map specific data fields to the following UI components while maintaining a professional aesthetic:
+   Decisions: List all items from the decisions field as a clean bulleted list under a clear "Decisions" heading.
 
-Summary (Priority 1): Display the summary data at the very top of the page. It should be formatted as a high-readability paragraph to serve as the executive overview.
+   Action Items (Ownership): List items from the action_items field as bullets. For each item, append a small rounded icon at the end of the line representing the "Owner" of that task, matching the color coding used in the Participants section."
 
-Transcript (Collapsible): Create a section titled "Transcript." This must be a collapsible accordion that is closed by default. Include a chevron/arrow icon that points up when closed and rotates when clicked to reveal the full text.
+3. **Deployment recommendation**  
+   "Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
 
-Participants (Visual Icons): Map the participants data to a horizontal row of rounded avatar divs. Each div should contain a person icon. Assign a unique, distinct background color to each participant. Implement a hover state/tooltip that displays the participant's full name.
+   Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
 
-Decisions: List all items from the decisions field as a clean bulleted list under a clear "Decisions" heading.
+   Project Specifications:
+   -Backend: Python (FastAPI). Critical Requirement: Must support long-running requests for OpenAI/Whisper processing without triggering 504 Gateway Timeouts.
+   -Frontend: React (Vite).
+   -Database: MongoDB Atlas (Cloud-hosted).
+   -Security: Requires secure Environment Variable management for OpenAI API keys.
 
-Action Items (Ownership): List items from the action_items field as bullets. For each item, append a small rounded icon at the end of the line representing the "Owner" of that task, matching the color coding used in the Participants section.
-```
-
-#### 3. Deployment recommendation
-
-```
-Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
-
-Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
-
-Project specifications:
-- Backend: Python (FastAPI). Critical requirement: must support long-running requests for OpenAI/Whisper processing without triggering 504 gateway timeouts.
-- Frontend: React (Vite).
-- Database: MongoDB Atlas (cloud-hosted).
-- Security: requires secure environment variable management for OpenAI API keys.
-
-Evaluation criteria:
-- Deployment velocity: must be deployable within a 2-hour window.
-- Cost efficiency: priority for free tier or pay-as-you-go hobby tiers.
-- Simplicity: prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
-- Reliability: the architecture must keep the connection open or provide a workaround (for example background tasks) for AI processing times.
-```
+   Evaluation Criteria:
+   -Deployment Velocity: Must be deployable within a 2-hour window.
+   -Cost Efficiency: Priority for Free Tier or "Pay-as-you-go" hobby tiers.
+   -Simplicity: Prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
+   -Reliability: The architecture must ensure the connection stays open or provide a workaround (like background tasks) for AI processing times.
+   "
 
 ### 2.2 LLM system prompt for meeting summary (full template + why)
 The backend builds one user message per request in `summarize.py` (`_make_prompt`). The model sees this text (placeholders: **`TRANSCRIPT_LANGUAGE`** is inferred from the transcript, e.g. English or Spanish; the real **`### Transcript`** block ends with the full transcript text). Full prompt template:
@@ -206,7 +202,7 @@ Example: if the narrator says "my brother Tom attends every meeting", Tom is NOT
 
 ## 3. Where I got stuck and how I fixed it
 *1) Too many (or wrong) participants*=
-**Problem:** The model sometimes listed more participants than there was, it couldnt distinguish well between “someone who spoke” and “someone only mentioned.”
+**Problem:** The model sometimes listed more participants than there was, it couldnt distinguish well btween “someone who spoke” and “someone only mentioned.”
 
 **What I did:** Tightened the summarization prompt and server-side rules (e.g. only people with spoken lines, filter absent or third-party mentions). That improved results a lot.
 
@@ -251,7 +247,8 @@ This is a **living list** of improvements.
 
 ---
 
-## Appendix: pointers in this repo 
-- Numbered phase plans: `plan/01-*.md` through `plan/12-*.md` 
+## Appendix: pointers in this repo
+- Technical overview (repo state): `plan/PROCESS.md`  
+- Numbered phase plans: `plan/01-*.md` through `plan/12-*.md` (order: `plan/the-process-for-me.md`)  
 
 ---

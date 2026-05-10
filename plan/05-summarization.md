@@ -1,5 +1,5 @@
 ## Goal
-Implement Phase 3: turn a transcript into strict, validated JSON:
+Turn a transcript into strict, validated JSON:
 - `summary` (string)
 - `participants` (list of strings)
 - `decisions` (list of strings)
@@ -17,9 +17,4 @@ Implement Phase 3: turn a transcript into strict, validated JSON:
 - **Anti-hallucination rules**: empty lists over guessing; only include owners/dates when stated.
 - **Short summary**: readable and consistent in the UI + docx.
 
-## Questions (answer before final polish)
-1. Which model should we use for summarization to balance cost/quality?
-   - Default suggestion: `gpt-5.4-mini` (cheap enough, good structured output).
-2. Do you want to include a `confidence` or `notes` field in the response?
-   - Default: **no** (keep API contract minimal).
 
