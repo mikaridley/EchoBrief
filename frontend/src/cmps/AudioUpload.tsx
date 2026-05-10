@@ -1,4 +1,5 @@
 import {
+  startTransition,
   useEffect,
   useId,
   useMemo,
@@ -14,6 +15,11 @@ import {
   uploadAudioForProcessing,
   type ProcessProgress,
 } from '../services/process.service'
+import {
+  clearLastProcessResult,
+  loadLastProcessResult,
+  saveLastProcessResult,
+} from '../services/last-process-result.storage'
 import { AudioUploadResult } from './AudioUploadResult'
 import { useAuth } from '../auth/auth.context'
 import type { ProcessResponse } from '../types/api'
@@ -33,6 +39,7 @@ export function AudioUpload() {
   const [error, setError] = useState('')
   const [result, setResult] = useState<ProcessResponse | null>(null)
   const [progress, setProgress] = useState<ProcessProgress | null>(null)
+  const hydratedForEmailRef = useRef<string | null>(null)
 
   const previewUrl = useMemo(() => {
     if (!file) return ''
@@ -44,9 +51,26 @@ export function AudioUpload() {
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
+  useEffect(() => {
+    if (isLoading) return
+    if (!me?.email) {
+      hydratedForEmailRef.current = null
+      startTransition(() => setResult(null))
+      return
+    }
+    if (hydratedForEmailRef.current === me.email) return
+    hydratedForEmailRef.current = me.email
+    const saved = loadLastProcessResult(me.email)
+    startTransition(() => setResult(saved))
+  }, [isLoading, me?.email])
+
+  useEffect(() => {
+    if (!me?.email || !result) return
+    saveLastProcessResult(me.email, result)
+  }, [me?.email, result])
+
   function setSingleFile(next: File | null) {
     setError('')
-    setResult(null)
     setFile(next)
   }
 
@@ -59,6 +83,7 @@ export function AudioUpload() {
     setError('')
     setResult(null)
     setFile(null)
+    if (me?.email) clearLastProcessResult(me.email)
     if (inputRef.current) inputRef.current.value = ''
   }
 

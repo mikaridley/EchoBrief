@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { AuthMe } from '../types/api'
 import { fetchMe } from '../services/user.service'
+import { clearLastProcessResult } from '../services/last-process-result.storage'
 import { authService } from './auth.service'
 import { AuthContext, type AuthProviderProps } from './auth.context'
 
@@ -54,11 +55,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const logout = useCallback(() => {
+    if (me?.email) clearLastProcessResult(me.email)
     authService.clearToken()
     setMe(null)
     setAuthError(null)
     window.location.reload()
-  }, [])
+  }, [me])
 
   useEffect(() => {
     let isCancelled = false
