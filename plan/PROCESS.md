@@ -230,6 +230,18 @@ Extra (authentication, users, deploy) - ~1 h
 
 ---
 
+## 5. Backlog: ideas to make EchoBrief better
+This is a **living list** of improvements.
+
+**Docker** (backend image, optional `compose` for API + dependencies later) - Same Python and deps everywhere; easier onboarding, CI, and deploy paths that expect containers. 
+**Speaker diarization** - True “who said what” per time segment instead of inferring speakers from one flat transcript; better participants, quotes, and action-item attribution. 
+**Transcript UX** - Timestamps, per-speaker lines (once diarization exists), optional audio player with seek-to-segment. 
+**Exports** - PDF or other formats alongside DOCX if users ask for them. 
+**Observability** - Structured logging and error reporting so production issues are diagnosable without guessing. 
+**a11y / polish** - Keyboard flow, focus, labels—makes the app usable for more people and often improves quality for everyone. 
+
+---
+
 ## Appendix: pointers in this repo
 - Technical overview (repo state): `plan/PROCESS.md`  
 - Numbered phase plans: `plan/01-*.md` through `plan/11-*.md` (order: `plan/the-process-for-me.md`)  
