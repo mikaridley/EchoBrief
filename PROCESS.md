@@ -253,7 +253,6 @@ This is a **living list** of improvements.
 ---
 
 ## Appendix: pointers in this repo
-- Plan order and repo snapshot: `plan/the-process-for-me.md`
 - Numbered phase plans: `plan/01-*.md` through `plan/12-*.md`
 
 ---
