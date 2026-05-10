@@ -42,6 +42,16 @@ class SummaryResult:
     cached: bool = False
 
 
+def _summary_result_to_json_dict(result: SummaryResult) -> dict:
+    """Match LLM JSON shape (summary / participants / decisions / action_items)."""
+    return {
+        'summary': result.summary,
+        'participants': result.participants,
+        'decisions': result.decisions,
+        'action_items': [i.model_dump() for i in result.action_items],
+    }
+
+
 class SummarizationError(Exception):
     def __init__(self, message: str, *, code: str):
         super().__init__(message)
@@ -442,7 +452,7 @@ def summarize_transcript(
                 f'Rewrite the following JSON so that ALL string values are in {language_name}.\n'
                 'Keep the exact same JSON keys and structure.\n'
                 'Return ONLY valid JSON.\n\n'
-                f'JSON:\n{json.dumps(parsed.model_dump(), ensure_ascii=False)}\n'
+                f'JSON:\n{json.dumps(_summary_result_to_json_dict(parsed), ensure_ascii=False)}\n'
             ),
             store=False,
         )
@@ -458,10 +468,7 @@ def summarize_transcript(
             'model': model,
             'prompt_version': prompt_version,
             'created_at': _now_iso_utc(),
-            'summary': parsed.summary,
-            'participants': parsed.participants,
-            'decisions': parsed.decisions,
-            'action_items': [i.model_dump() for i in parsed.action_items],
+            **_summary_result_to_json_dict(parsed),
         },
     )
 
