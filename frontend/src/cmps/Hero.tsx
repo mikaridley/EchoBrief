@@ -1,18 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
-const WORDS = [
-  'transcripts',
-  'notes',
-  'summaries',
-  'action items',
-  'insights',
-  'follow-ups',
-]
+const WORDS = ['transcripts', 'notes', 'summaries', 'action items', 'insights', 'follow-ups'] as const
 
 export function Hero() {
   const [idx, setIdx] = useState(0)
   const [visibleCount, setVisibleCount] = useState(0)
-  const timeoutsRef = useRef([])
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [isReducedMotion, setIsReducedMotion] = useState(false)
 
   const currentWord = WORDS[idx]
@@ -20,7 +13,7 @@ export function Hero() {
   const maxLen = useMemo(() => WORDS.reduce((acc, w) => Math.max(acc, w.length), 0), [])
   const typedText = useMemo(
     () => currentWord.slice(0, Math.min(visibleCount, currentWord.length)),
-    [currentWord, visibleCount]
+    [currentWord, visibleCount],
   )
 
   useEffect(() => {
@@ -51,7 +44,7 @@ export function Hero() {
       timeoutsRef.current = []
     }
 
-    const schedule = (fn, ms) => {
+    const schedule = (fn: () => void, ms: number) => {
       const t = window.setTimeout(fn, ms)
       timeoutsRef.current.push(t)
       return t
@@ -85,17 +78,15 @@ export function Hero() {
     return clearAll
   }, [isReducedMotion, idx, chars.length])
 
+  const rotatorStyle = { '--word-ch': maxLen } as CSSProperties
+
   return (
     <section className="hero" aria-label="Hero">
       <h1 className="hero__title">
         <span className="hero__title-static">Turn meetings into </span>
 
-        <span
-          className="hero__rotator"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <span className="hero__word" style={{ '--word-ch': maxLen }}>
+        <span className="hero__rotator" aria-live="polite" aria-atomic="true">
+          <span className="hero__word" style={rotatorStyle}>
             <span className="hero__typed" aria-hidden="true">
               {typedText || '\u00A0'}
             </span>
@@ -109,4 +100,3 @@ export function Hero() {
     </section>
   )
 }
-

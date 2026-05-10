@@ -1,9 +1,9 @@
 import logoUrl from '../assets/imgs/logo-minimal.svg'
 import { NavLink } from 'react-router-dom'
-import { GoogleLogin } from '@react-oauth/google'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { useEffect, useId, useState } from 'react'
 import { Loader2, Menu, X } from 'lucide-react'
-import { useAuth } from '../auth/auth.context.js'
+import { useAuth } from '../auth/auth.context'
 
 export function AppHeader() {
   const { me, isLoading, authError, clearAuthError, reportGoogleLoginError, onLoginSuccess, logout } = useAuth()
@@ -21,7 +21,7 @@ export function AppHeader() {
   }
 
   useEffect(() => {
-    function onKeyDown(ev) {
+    function onKeyDown(ev: KeyboardEvent) {
       if (ev.key === 'Escape') closeMenu()
     }
 
@@ -37,6 +37,10 @@ export function AppHeader() {
       window.removeEventListener('resize', onResize)
     }
   }, [])
+
+  function onGoogleSuccess(res: CredentialResponse) {
+    onLoginSuccess(res.credential || '')
+  }
 
   return (
     <header className="app-header">
@@ -63,15 +67,9 @@ export function AppHeader() {
           aria-hidden={!isMenuOpen}
         />
 
-        <nav
-          id={menuId}
-          className={`app-header__nav ${isMenuOpen ? 'is-open' : ''}`}
-          aria-label="Primary"
-        >
+        <nav id={menuId} className={`app-header__nav ${isMenuOpen ? 'is-open' : ''}`} aria-label="Primary">
           <NavLink
-            className={({ isActive }) =>
-              isActive ? 'app-header__link is-active' : 'app-header__link'
-            }
+            className={({ isActive }) => (isActive ? 'app-header__link is-active' : 'app-header__link')}
             to="/"
             end
             onClick={closeMenu}
@@ -79,9 +77,7 @@ export function AppHeader() {
             Home
           </NavLink>
           <NavLink
-            className={({ isActive }) =>
-              isActive ? 'app-header__link is-active' : 'app-header__link'
-            }
+            className={({ isActive }) => (isActive ? 'app-header__link is-active' : 'app-header__link')}
             to="/about-team"
             onClick={closeMenu}
           >
@@ -110,7 +106,7 @@ export function AppHeader() {
                       <GoogleLogin
                         click_listener={() => clearAuthError()}
                         containerProps={{ className: 'app-header__gsi-button-root' }}
-                        onSuccess={(res) => onLoginSuccess(res?.credential || '')}
+                        onSuccess={onGoogleSuccess}
                         onError={() => reportGoogleLoginError()}
                         useOneTap={false}
                         type="icon"
@@ -135,10 +131,7 @@ export function AppHeader() {
             )}
           </div>
         </nav>
-
-
       </div>
     </header>
   )
 }
-

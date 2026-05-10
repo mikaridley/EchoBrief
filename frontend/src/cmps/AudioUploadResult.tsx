@@ -1,6 +1,8 @@
 import { ChevronDown, UserRound } from 'lucide-react'
 
-function getInitials(name) {
+import type { ActionItem, ProcessResponse } from '../types/api'
+
+function getInitials(name: string): string {
   const cleaned = String(name || '').trim()
   if (!cleaned) return '?'
 
@@ -10,14 +12,30 @@ function getInitials(name) {
   return (first + last).toUpperCase()
 }
 
-export function AudioUploadResult({ result, error, isUploading, isDownloading, onUploadNew, onDownloadDocx }) {
+export type AudioUploadResultProps = {
+  result: ProcessResponse | null
+  error: string
+  isUploading: boolean
+  isDownloading: boolean
+  onUploadNew: () => void
+  onDownloadDocx: () => void
+}
+
+export function AudioUploadResult({
+  result,
+  error,
+  isUploading,
+  isDownloading,
+  onUploadNew,
+  onDownloadDocx,
+}: AudioUploadResultProps) {
   if (!result) return null
 
   const summary = String(result.summary || '').trim()
   const transcript = String(result.transcript || '').trim()
   const participants = Array.isArray(result.participants) ? result.participants : []
   const decisions = Array.isArray(result.decisions) ? result.decisions : []
-  const actionItems = Array.isArray(result.action_items) ? result.action_items : []
+  const actionItems: ActionItem[] = Array.isArray(result.action_items) ? result.action_items : []
 
   return (
     <section className="audio-upload__result" aria-label="Meeting result">
@@ -127,4 +145,3 @@ export function AudioUploadResult({ result, error, isUploading, isDownloading, o
     </section>
   )
 }
-

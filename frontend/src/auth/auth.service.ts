@@ -7,20 +7,20 @@ export const authService = {
   getAuthHeaders,
 }
 
-function getToken() {
+function getToken(): string {
   return sessionStorage.getItem(TOKEN_KEY) || ''
 }
 
-function setToken(token) {
+function setToken(token: string): void {
   if (!token) return
   sessionStorage.setItem(TOKEN_KEY, token)
 }
 
-function clearToken() {
+function clearToken(): void {
   sessionStorage.removeItem(TOKEN_KEY)
 }
 
-function getAuthHeaders() {
+function getAuthHeaders(): Record<string, string> {
   const token = getToken()
   if (!token) return {}
   return { Authorization: `Bearer ${token}` }

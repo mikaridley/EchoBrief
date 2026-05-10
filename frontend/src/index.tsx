@@ -4,12 +4,17 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 
 import './assets/styles/main.css'
 
-import RootCmp from './RootCmp.jsx'
-import { AuthProvider } from './auth/AuthContext.jsx'
+import RootCmp from './RootCmp'
+import { AuthProvider } from './auth/AuthContext'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
-createRoot(document.getElementById('root')).render(
+const rootEl = document.getElementById('root')
+if (!rootEl) {
+  throw new Error('Missing #root element')
+}
+
+createRoot(rootEl).render(
   <StrictMode>
     {googleClientId ? (
       <GoogleOAuthProvider clientId={googleClientId}>
@@ -22,5 +27,5 @@ createRoot(document.getElementById('root')).render(
         <RootCmp />
       </AuthProvider>
     )}
-  </StrictMode>
+  </StrictMode>,
 )

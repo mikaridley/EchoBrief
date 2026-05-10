@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { authService } from './auth.service.js'
-import { fetchMe } from '../services/user.service.js'
-import { AuthContext } from './auth.context.js'
 
-export function AuthProvider({ children }) {
-  const [me, setMe] = useState(null)
+import type { AuthMe } from '../types/api'
+import { fetchMe } from '../services/user.service'
+import { authService } from './auth.service'
+import { AuthContext, type AuthProviderProps } from './auth.context'
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [me, setMe] = useState<AuthMe | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [authError, setAuthError] = useState(null)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   const clearAuthError = useCallback(() => {
     setAuthError(null)
@@ -35,18 +37,21 @@ export function AuthProvider({ children }) {
     } catch (err) {
       authService.clearToken()
       setMe(null)
-      const message = err?.message || 'Could not verify sign-in with the server.'
+      const message = err instanceof Error ? err.message : 'Could not verify sign-in with the server.'
       setAuthError(message)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
-  const onLoginSuccess = useCallback((idToken) => {
-    setAuthError(null)
-    authService.setToken(idToken)
-    refresh()
-  }, [refresh])
+  const onLoginSuccess = useCallback(
+    (idToken: string) => {
+      setAuthError(null)
+      authService.setToken(idToken)
+      void refresh()
+    },
+    [refresh],
+  )
 
   const logout = useCallback(() => {
     authService.clearToken()
@@ -58,7 +63,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let isCancelled = false
 
-    ;(async () => {
+    void (async () => {
       await Promise.resolve()
       if (isCancelled) return
       await refresh()
@@ -69,8 +74,8 @@ export function AuthProvider({ children }) {
     }
   }, [refresh])
 
-  const value = useMemo(() => {
-    return {
+  const value = useMemo(
+    () => ({
       me,
       isLoading,
       authError,
@@ -79,8 +84,9 @@ export function AuthProvider({ children }) {
       refresh,
       onLoginSuccess,
       logout,
-    }
-  }, [me, isLoading, authError, clearAuthError, reportGoogleLoginError, refresh, onLoginSuccess, logout])
+    }),
+    [me, isLoading, authError, clearAuthError, reportGoogleLoginError, refresh, onLoginSuccess, logout],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

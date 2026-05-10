@@ -1,7 +1,16 @@
-import { appConfig } from '../config/app.config.js'
-import { authService } from '../auth/auth.service.js'
+import { appConfig } from '../config/app.config'
+import { authService } from '../auth/auth.service'
+import type { ProcessResponse } from '../types/api'
 
-export async function uploadAudioForProcessing(file) {
+function detailMessage(detail: unknown): string | undefined {
+  if (typeof detail === 'string') return detail
+  if (detail && typeof detail === 'object' && 'message' in detail && typeof (detail as { message: unknown }).message === 'string') {
+    return (detail as { message: string }).message
+  }
+  return undefined
+}
+
+export async function uploadAudioForProcessing(file: File): Promise<ProcessResponse> {
   if (!file) throw new Error('Missing file')
 
   const formData = new FormData()
@@ -16,18 +25,18 @@ export async function uploadAudioForProcessing(file) {
   if (!res.ok) {
     let message = `Upload failed (${res.status})`
     try {
-      const data = await res.json()
-      message = data?.detail?.message || data?.detail || message
+      const data = (await res.json()) as { detail?: unknown }
+      message = detailMessage(data?.detail) || message
     } catch {
       // ignore
     }
     throw new Error(message)
   }
 
-  return res.json()
+  return res.json() as Promise<ProcessResponse>
 }
 
-export async function downloadDocxFromResult(result) {
+export async function downloadDocxFromResult(result: ProcessResponse): Promise<{ blob: Blob; filename: string }> {
   if (!result) throw new Error('Missing result')
 
   const res = await fetch(`${appConfig.apiBaseUrl}/api/docx`, {
@@ -39,8 +48,8 @@ export async function downloadDocxFromResult(result) {
   if (!res.ok) {
     let message = `DOCX download failed (${res.status})`
     try {
-      const data = await res.json()
-      message = data?.detail?.message || data?.detail || message
+      const data = (await res.json()) as { detail?: unknown }
+      message = detailMessage(data?.detail) || message
     } catch {
       // ignore
     }
@@ -55,4 +64,3 @@ export async function downloadDocxFromResult(result) {
 
   return { blob, filename }
 }
-

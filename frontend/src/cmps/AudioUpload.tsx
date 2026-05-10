@@ -1,23 +1,33 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type KeyboardEvent,
+} from 'react'
 import { AlertTriangle, UploadCloud, X } from 'lucide-react'
-import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service.js'
-import { AudioUploadResult } from './AudioUploadResult.jsx'
-import { useAuth } from '../auth/auth.context.js'
+import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service'
+import { AudioUploadResult } from './AudioUploadResult'
+import { useAuth } from '../auth/auth.context'
+import type { ProcessResponse } from '../types/api'
 
 const ACCEPT = ['audio/*', '.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'].join(',')
 
 export function AudioUpload() {
   const inputId = useId()
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const { me, isLoading } = useAuth()
 
-  const [file, setFile] = useState(null)
+  const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState<ProcessResponse | null>(null)
 
   const previewUrl = useMemo(() => {
     if (!file) return ''
@@ -29,13 +39,13 @@ export function AudioUpload() {
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
-  function setSingleFile(next) {
+  function setSingleFile(next: File | null) {
     setError('')
     setResult(null)
     setFile(next)
   }
 
-  function onPickFile(ev) {
+  function onPickFile(ev: ChangeEvent<HTMLInputElement>) {
     const next = ev.target.files?.[0] || null
     setSingleFile(next)
   }
@@ -55,7 +65,7 @@ export function AudioUpload() {
     inputRef.current?.click()
   }
 
-  function onDragOver(ev) {
+  function onDragOver(ev: DragEvent<HTMLDivElement>) {
     ev.preventDefault()
     setIsDragging(true)
   }
@@ -64,7 +74,7 @@ export function AudioUpload() {
     setIsDragging(false)
   }
 
-  function onDrop(ev) {
+  function onDrop(ev: DragEvent<HTMLDivElement>) {
     ev.preventDefault()
     setIsDragging(false)
 
@@ -83,7 +93,7 @@ export function AudioUpload() {
       const data = await uploadAudioForProcessing(file)
       setResult(data)
     } catch (err) {
-      setError(err?.message || 'Upload failed')
+      setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setIsUploading(false)
     }
@@ -106,10 +116,14 @@ export function AudioUpload() {
       a.remove()
       URL.revokeObjectURL(url)
     } catch (err) {
-      setError(err?.message || 'DOCX download failed')
+      setError(err instanceof Error ? err.message : 'DOCX download failed')
     } finally {
       setIsDownloading(false)
     }
+  }
+
+  function onDropZoneKeyDown(ev: KeyboardEvent<HTMLDivElement>) {
+    if (ev.key === 'Enter' || ev.key === ' ') onOpenPicker()
   }
 
   return (
@@ -126,9 +140,7 @@ export function AudioUpload() {
             </span>
             <p className="audio-upload__blocked-title">Access required</p>
           </div>
-          <p className="audio-upload__blocked-text">
-            Contact admin to enable access.
-          </p>
+          <p className="audio-upload__blocked-text">Contact admin to enable access.</p>
         </section>
       )}
 
@@ -155,9 +167,7 @@ export function AudioUpload() {
             role="button"
             tabIndex={0}
             onClick={onOpenPicker}
-            onKeyDown={(ev) => {
-              if (ev.key === 'Enter' || ev.key === ' ') onOpenPicker()
-            }}
+            onKeyDown={onDropZoneKeyDown}
             aria-disabled={!me?.enabled}
           >
             <div className="audio-upload__drop-icon" aria-hidden="true">
@@ -224,4 +234,3 @@ export function AudioUpload() {
     </section>
   )
 }
-

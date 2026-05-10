@@ -1,6 +1,6 @@
-import { AppHeader } from './cmps/AppHeader.jsx'
-import { Home } from './pages/Home.jsx'
-import { AboutTeam } from './pages/AboutTeam.jsx'
+import { AppHeader } from './cmps/AppHeader'
+import { Home } from './pages/Home'
+import { AboutTeam } from './pages/AboutTeam'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 export default function RootCmp() {
