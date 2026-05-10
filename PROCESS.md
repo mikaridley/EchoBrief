@@ -234,7 +234,8 @@ That would cost more engineering and often more API usage, but it is the right f
 | Backend (upload, transcribe, summarize, cache) | ~3 h |
 | Frontend (upload UI, results) | ~2 h |
 | Extra (authentication, users, deploy) | ~1 h |
-| **Total (approx.)** | **~6 h** |
+| Quality assurance (UX/UI refinement, Stabilization, QA, code hardening) | ~1.5 h |
+| **Total (approx.)** | **~7.5 h** |
 
 ---
 
@@ -251,7 +252,8 @@ This is a **living list** of improvements.
 
 ---
 
-## Appendix: pointers in this repo 
-- Numbered phase plans: `plan/01-*.md` through `plan/12-*.md` 
+## Appendix: pointers in this repo
+- Plan order and repo snapshot: `plan/the-process-for-me.md`
+- Numbered phase plans: `plan/01-*.md` through `plan/12-*.md`
 
 ---
