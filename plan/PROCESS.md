@@ -11,7 +11,8 @@
 
 Optionally, the same content can be exported as **DOCX**.
 
-**Frontend:** React + Vite. **Backend:** FastAPI with OpenAI (transcription + summarization). Google sign-in and MongoDB-backed quotas protect paid API usage in production; they are optional for local development.
+**Frontend:** React + Vite + TypeScript.
+ **Backend:** FastAPI with OpenAI (transcription + summarization). Google sign-in and MongoDB-backed quotas protect paid API usage in production; they are optional for local development.
 
 ---
 
@@ -239,6 +240,7 @@ This is a **living list** of improvements.
 **Exports** - PDF or other formats alongside DOCX if users ask for them. 
 **Observability** - Structured logging and error reporting so production issues are diagnosable without guessing. 
 **a11y / polish** - Keyboard flow, focus, labels—makes the app usable for more people and often improves quality for everyone. 
+**HttpOnly session cookies** - After Google sign-in, verify the ID token once on the API, then issue a server session in an `HttpOnly; Secure` cookie instead of keeping the token in `sessionStorage` and sending `Authorization: Bearer`. Frontend uses `fetch` with `credentials: 'include'`; Render CORS must allow the Vercel origin with credentials (and `SameSite=None; Secure` on the cookie while the app and API are on different registrable domains). Optional: align `app.` + `api.` under one domain to simplify SameSite. Fine to defer past the demo; worth doing before treating auth as production-hardened.
 
 ---
 
