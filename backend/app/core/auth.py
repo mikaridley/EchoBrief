@@ -6,8 +6,8 @@ from fastapi.concurrency import run_in_threadpool
 
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
-from pymongo import ReturnDocument
 
+from ..repositories import UsersRepository
 from .config import get_settings
 from .db import get_db_from_app
 
@@ -78,45 +78,31 @@ async def get_current_user(request: Request) -> AuthedUser:
     name = payload.get('name')
     picture = payload.get('picture')
 
-    db = get_db_from_app(request.app)
-    users = db.get_collection('users')
+    repo = UsersRepository(get_db_from_app(request.app))
 
     now = int(time.time())
     base_limit = int(settings.summaries_total_limit_default)
 
-    doc = await users.find_one({'email': email})
+    doc = await repo.find_by_email(email)
     if doc is None:
-        await users.insert_one(
-            {
-                'email': email,
-                'name': name,
-                'picture': picture,
-                'provider': 'google',
-                'role': 'user',
-                'enabled': False,
-                'limits': {'summariesTotalLimit': base_limit, 'summariesTotalUsed': 0},
-                'createdAt': now,
-                'lastLoginAt': now,
-            }
+        await repo.insert_google_user(
+            email=email,
+            name=name,
+            picture=picture,
+            base_limit=base_limit,
+            now=now,
         )
         enabled = False
         role = 'user'
         limit = base_limit
         used = 0
     else:
-        await users.update_one(
-            {'_id': doc['_id']},
-            {
-                '$set': {'name': name, 'picture': picture, 'lastLoginAt': now},
-                '$setOnInsert': {
-                    'createdAt': now,
-                    'provider': 'google',
-                    'role': 'user',
-                    'enabled': False,
-                    'limits': {'summariesTotalLimit': base_limit, 'summariesTotalUsed': 0},
-                },
-            },
-            upsert=True,
+        await repo.update_google_profile_on_login(
+            user_id=doc['_id'],
+            name=name,
+            picture=picture,
+            now=now,
+            base_limit=base_limit,
         )
         enabled = bool(doc.get('enabled', False))
         role = doc.get('role')
@@ -160,22 +146,13 @@ async def consume_summary_quota(request: Request, user: AuthedUser = Depends(req
         )
 
     # Atomically increments used count if still below limit.
-    db = get_db_from_app(request.app)
-    users = db.get_collection('users')
+    repo = UsersRepository(get_db_from_app(request.app))
 
-    res = await users.find_one_and_update(
-        {
-            'email': user.email,
-            'enabled': True,
-            '$expr': {'$lt': ['$limits.summariesTotalUsed', '$limits.summariesTotalLimit']},
-        },
-        {'$inc': {'limits.summariesTotalUsed': 1}},
-        return_document=ReturnDocument.AFTER,
-    )
+    res = await repo.try_increment_summary_usage(user.email)
 
     if not res:
         # Either user disabled or quota exceeded
-        current = await users.find_one({'email': user.email})
+        current = await repo.find_by_email(user.email)
         if current and not current.get('enabled', False):
             raise HTTPException(
                 status_code=403,
