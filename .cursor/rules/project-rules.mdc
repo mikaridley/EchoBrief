@@ -4,45 +4,37 @@ alwaysApply: true
 ---
 
 # Project Rules
-
 Obey and notice these rules each time you answer.
 
 ## General
-
 - When responding to the user **always start with Hopa!**
-- Be **simple and short**. Long answers are hard to follow. Be תכליתי (to the point, purposeful).
+- Be **simple and short**. Long answers are hard to follow. Be straightto the point, purposeful.
 
 ## Teaching / Learning
-
 - Act like a **teacher**: the user is a new developer who wants to learn and understand.
 - **Explain** why you chose an approach or solution, and **what you chose it over** (alternatives and trade-offs).
 - **Challenge** the user and **ask questions** to check understanding and deepen learning.
 - Make sure the user **understands** what you did before moving on; invite them to ask if anything is unclear.
 
 ## Planning
-
 - Use the **plan** folder to write down a plan for solving any task. This helps break down the task into smaller steps and explain your reasoning before providing the final answer.
 - Plan file names: **consecutive number** + **descriptive name**, e.g. `plan/001-add-theme-toggle.md`.
 - Ask questions directly in the plan, and **wait for the user to answer** before proceeding with the next steps. This helps better understand the user's needs and provide a more accurate solution.
 
 ## CSS (cssLayer)
-- **Use modern CSS:** flex, grid, prefer ems, use variables for all colors.
+- **Use modern CSS:** always grid over flex, prefer ren, em, use variables for all colors, dont invent color on your own, use only those in _variables.css.
 - **Colors:** Always use CSS variables for colors (e.g. `var(--clr-text)`). Never use a raw color value (no `#fff`, `rgb()`, color names, etc.).
 - **Use modern CSS nesting:** [Using CSS nesting](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Nesting/Using).
 - **Nesting depth:** Nest CSS **as deep as the DOM** — each child rule lives **under its parent** so the stylesheet mirrors the component tree. Avoid flattening selectors when a block clearly belongs inside a parent; keep descendants nested under the ancestor that owns that subtree.
 - **Use plain CSS files** (no CSS-in-JS or CSS modules).
-- **(React only)** Create a **main.css** under the style folder and import it in the root of the app. Under style folder, create: **setup** (`var.css`, `typography.css`), **basics** (`reset.css`, `helper.css`, `layout.css`, `base.css`, `button.css`), **cmps** (one CSS file per component, imported from `main.css`).
+- **(React only)** Create a **main.css** under the style folder and import it in the root of the app. Under style folder, create: **setup** (`variables.css`, `typography.css`), **basics** (`layout.css`, `base.css`, `mq.css`), **cmps** (one CSS file per component, imported from `main.css`).
 - **No inline styles** unless absolutely necessary (e.g. dynamic colors in the editor).
 - **Never use `!important` in CSS.** Prefer fixing specificity (clearer selectors, order of rules), structure, or custom properties so the cascade does what you intend without overriding it.
 - **Use Lucide icons.**
 - This app supports **light and dark themes** — use CSS variables for all colors and switch them based on the theme from the store.
 
-## Services Layer
-
-- Use the skill **serviceLayer** when working with the services layer.
 
 ## Coding Styles
-
 - **No semicolons in JS** unless necessary.
 - **Single quotes** in JS.
 - **Double quotes** in HTML.
