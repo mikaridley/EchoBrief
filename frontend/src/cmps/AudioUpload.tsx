@@ -9,7 +9,11 @@ import {
   type KeyboardEvent,
 } from 'react'
 import { AlertTriangle, UploadCloud, X } from 'lucide-react'
-import { downloadDocxFromResult, uploadAudioForProcessing } from '../services/process.service'
+import {
+  downloadDocxFromResult,
+  uploadAudioForProcessing,
+  type ProcessProgress,
+} from '../services/process.service'
 import { AudioUploadResult } from './AudioUploadResult'
 import { useAuth } from '../auth/auth.context'
 import type { ProcessResponse } from '../types/api'
@@ -28,6 +32,7 @@ export function AudioUpload() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<ProcessResponse | null>(null)
+  const [progress, setProgress] = useState<ProcessProgress | null>(null)
 
   const previewUrl = useMemo(() => {
     if (!file) return ''
@@ -88,14 +93,16 @@ export function AudioUpload() {
     setIsUploading(true)
     setError('')
     setResult(null)
+    setProgress({ percent: 0, stage: 'upload' })
 
     try {
-      const data = await uploadAudioForProcessing(file)
+      const data = await uploadAudioForProcessing(file, setProgress)
       setResult(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setIsUploading(false)
+      setProgress(null)
     }
   }
 
@@ -213,12 +220,42 @@ export function AudioUpload() {
               onClick={onUpload}
               disabled={!me?.enabled || !file || isUploading}
             >
-              {isUploading ? 'Uploading…' : 'Upload'}
+              {isUploading ? 'Working…' : 'Upload'}
             </button>
 
             <div className="audio-upload__status" aria-live="polite">
               {error && <p className="audio-upload__error">{error}</p>}
             </div>
+
+            {isUploading && progress && (
+              <div className="audio-upload__progress-wrap">
+                <div className="audio-upload__progress-meta">
+                  <span className="audio-upload__progress-label">
+                    {progress.stage === 'upload' ? 'Sending your file…' : 'Transcribing and summarizing…'}
+                  </span>
+                  <span className="audio-upload__progress-pct" aria-hidden="true">
+                    {progress.percent}%
+                  </span>
+                </div>
+                <div
+                  className="audio-upload__progress-track"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress.percent}
+                  aria-valuetext={
+                    progress.stage === 'upload'
+                      ? `Sending file, ${progress.percent}%`
+                      : `Processing on server, ${progress.percent}%`
+                  }
+                >
+                  <div
+                    className="audio-upload__progress-fill"
+                    style={{ width: `${progress.percent}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </footer>
         </>
       )}

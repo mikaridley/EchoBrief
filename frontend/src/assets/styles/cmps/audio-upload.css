@@ -160,7 +160,51 @@
 
   .audio-upload__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
+    align-items: flex-start;
+
+    .audio-upload__progress-wrap {
+      display: grid;
+      gap: 0.35rem;
+      flex: 1 1 100%;
+      min-inline-size: 0;
+
+      .audio-upload__progress-meta {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: baseline;
+        gap: 0.35rem 0.75rem;
+
+        .audio-upload__progress-label {
+          font-size: 0.9em;
+          font-weight: 600;
+          color: var(--dark-text);
+        }
+
+        .audio-upload__progress-pct {
+          font-size: 0.85em;
+          font-variant-numeric: tabular-nums;
+          color: var(--brand-one);
+          font-weight: 600;
+        }
+      }
+
+      .audio-upload__progress-track {
+        inline-size: 100%;
+        block-size: 0.55rem;
+        border-radius: 999px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--brand-one) 18%, var(--sec-bg));
+
+        .audio-upload__progress-fill {
+          block-size: 100%;
+          border-radius: inherit;
+          background: var(--brand-one);
+          transition: width 0.25s ease-out;
+        }
+      }
+    }
 
     .audio-upload__btn {
       inline-size: 9.375em;
