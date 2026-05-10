@@ -15,7 +15,7 @@ def openai_test() -> dict:
     if not settings.openai_test_enabled:
         raise HTTPException(status_code=404, detail='Not found')
     if not settings.openai_api_key:
-        raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY')
+        raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY. Set it in backend/.env')
 
     client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_sec)
     try:

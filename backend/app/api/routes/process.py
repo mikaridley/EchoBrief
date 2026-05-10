@@ -1,22 +1,24 @@
 """HTTP route for audio upload -> transcription (and optional summarization)."""
 
+import hashlib
+import logging
 import os
 import tempfile
 import time
-import json
-import hashlib
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi import Depends
 
+from ...core.auth import AuthedUser, consume_summary_quota
+from ...core.cache_io import read_json_dict_safe, write_json_atomic
 from ...core.config import get_settings
-from ...paths import resolve_backend_path
-from ...core.auth import consume_summary_quota, AuthedUser
-from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
+from ...core.paths import resolve_backend_path
 from ...schemas.meeting import ActionItem, ProcessResponse
+from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -67,8 +69,8 @@ async def process_audio(
         file_hash = sha.hexdigest()
         cache_dir = resolve_backend_path(settings.transcription_cache_dir)
         cache_path = cache_dir / f'{file_hash}.json'
-        if cache_path.exists():
-            cached = json.loads(cache_path.read_text(encoding='utf-8'))
+        cached = read_json_dict_safe(cache_path)
+        if cached is not None:
             tr_text = (cached.get('transcript') or '').strip()
             if tr_text:
                 summary = ''
@@ -179,13 +181,9 @@ async def process_audio(
                 raise HTTPException(status_code=502, detail=e.provider_message or str(e)) from e
             raise HTTPException(status_code=502, detail=f'{e.code}: {str(e)}') from e
 
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(
-            json.dumps(
-                {'transcript': tr.transcript, 'language': tr.language, 'model': tr.model},
-                ensure_ascii=False,
-            ),
-            encoding='utf-8',
+        write_json_atomic(
+            cache_path,
+            {'transcript': tr.transcript, 'language': tr.language, 'model': tr.model},
         )
 
         summary = ''
@@ -197,7 +195,10 @@ async def process_audio(
 
         if settings.summarization_enabled:
             if not settings.openai_api_key:
-                raise HTTPException(status_code=500, detail='Missing OPENAI_API_KEY for summarization')
+                raise HTTPException(
+                    status_code=500,
+                    detail='Missing OPENAI_API_KEY. Set it in backend/.env',
+                )
 
             try:
                 sr = await run_in_threadpool(
@@ -244,5 +245,8 @@ async def process_audio(
             await file.close()
         finally:
             if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+                try:
+                    os.remove(temp_path)
+                except OSError as e:
+                    logger.warning('Failed to remove temp audio file %s: %s', temp_path, e)
 

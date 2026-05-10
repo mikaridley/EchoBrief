@@ -12,7 +12,6 @@ for identical inputs.
 import hashlib
 import json
 import logging
-import tempfile
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -21,7 +20,8 @@ from pathlib import Path
 from openai import OpenAI
 from pydantic import ValidationError
 
-from ..paths import resolve_backend_path
+from ..core.cache_io import read_json_dict_safe, write_json_atomic
+from ..core.paths import resolve_backend_path
 from ..schemas.meeting import ActionItem
 
 
@@ -203,15 +203,10 @@ def _read_attempts_file(cache_path: Path) -> dict | None:
         { "transcript_hash": "...", "attempts": [ {...}, ... ] }
     Returns None if missing, unreadable, or wrong shape.
     """
-    try:
-        data = json.loads(cache_path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError):
+    data = read_json_dict_safe(cache_path)
+    if data is None:
         return None
-
-    if not isinstance(data, dict):
-        return None
-    attempts = data.get('attempts')
-    if not isinstance(attempts, list):
+    if not isinstance(data.get('attempts'), list):
         return None
     return data
 
@@ -228,30 +223,7 @@ def _find_matching_attempt(attempts: list[dict], *, model: str, prompt_version: 
 
 
 def _write_attempts_file(cache_path: Path, payload: dict) -> None:
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode='w',
-            encoding='utf-8',
-            delete=False,
-            dir=str(cache_path.parent),
-            prefix=f'{cache_path.stem}.',
-            suffix='.tmp',
-        ) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(json.dumps(payload, ensure_ascii=False, indent=2))
-        tmp_path.replace(cache_path)
-    finally:
-        if tmp_path and tmp_path.exists() and tmp_path != cache_path:
-            try:
-                tmp_path.unlink(missing_ok=True)
-            except OSError as e:
-                logger.warning(
-                    'Failed to remove summarize cache temp file %s: %s',
-                    tmp_path,
-                    e,
-                )
+    write_json_atomic(cache_path, payload, indent=2)
 
 
 def _append_attempt(cache_path: Path, *, transcript_hash: str, attempt: dict) -> None:

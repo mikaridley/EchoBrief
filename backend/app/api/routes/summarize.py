@@ -1,12 +1,11 @@
 """HTTP route for text-only summarization."""
 
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
-from fastapi import Depends
+from pydantic import BaseModel, Field
 
+from ...core.auth import AuthedUser, consume_summary_quota
 from ...core.config import get_settings
-from ...core.auth import consume_summary_quota, AuthedUser
 from ...schemas.meeting import ProcessResponse
 from ...services import SummarizationError, summarize_transcript
 
