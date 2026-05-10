@@ -55,38 +55,38 @@ Splitting into routes / services / schemas makes testing easier, makes it possib
 Prompt Examples:
 
 1. **Frontend skeleton**  
-   "Role: Expert React & Frontend Architect
+   **Role:** Expert React & Frontend Architect.
 
-   Task: Initialize a React frontend using Vite and set up a specific, modular folder architecture.
+   **Task:** Initialize a React frontend using Vite and a modular CSS layout.
 
-   Core Technology Stack:
+   **Stack:** React (Vite), modular CSS. Empty folders should include `.gitkeep` where needed. In `main.css`, import everything under `setup/`, `basics/`, `cmps/`, and `pages/` so styles have one entry point.
 
-   Framework: React (Vite)
-   Styling: Modular CSS (following the provided directory structure)> Directory Structure Requirements: Create the following folder hierarchy exactly as specified. Ensure empty directories contain a .gitkeep if necessary to maintain the structure.
-   In main.css, import all files from setup/, basics/, cmps/, and pages/ to ensure a single source of truth for styles.
-      src/
-      ├── assets/
-      │   ├── fonts/
-      │   ├── imgs/
-      │   └── styles/
-      │       ├── basics/
-      │       │   ├── base.css
-      │       │   └── layout.css
-      │       ├── cmps/
-      │       ├── pages/
-      │       ├── setup/
-      │       │   ├── _mq.css
-      │       │   ├── _typography.css
-      │       │   └── _variables.css
-      │       └── main.css
-      ├── cmps/
-      ├── config/
-      ├── pages/
-      ├── services/
-      ├── utils/
-      ├── index.jsx
-      └── RootCmp.jsx
-      "
+   **Target `src/` tree** (fenced `text` block keeps monospace alignment in Cursor and on GitHub):
+
+   ```text
+   src/
+   ├── assets/
+   │   ├── fonts/
+   │   ├── imgs/
+   │   └── styles/
+   │       ├── basics/
+   │       │   ├── base.css
+   │       │   └── layout.css
+   │       ├── cmps/
+   │       ├── pages/
+   │       ├── setup/
+   │       │   ├── _mq.css
+   │       │   ├── _typography.css
+   │       │   └── _variables.css
+   │       └── main.css
+   ├── cmps/
+   ├── config/
+   ├── pages/
+   ├── services/
+   ├── utils/
+   ├── index.jsx
+   └── RootCmp.jsx
+   ```
 
 2. **Data-to-UI Mapping Specification**  
    "Role: Expert Frontend Developer and UI/UX Designer.
