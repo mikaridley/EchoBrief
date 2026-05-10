@@ -53,6 +53,7 @@ Splitting into routes / services / schemas makes testing easier, makes it possib
 
 ### 2.1 Cursor / coding assistant (example prompts)
 Prompt Examples:
+
 1. **Frontend skeleton**  
    "Role: Expert React & Frontend Architect
 
@@ -106,22 +107,22 @@ Prompt Examples:
    Action Items (Ownership): List items from the action_items field as bullets. For each item, append a small rounded icon at the end of the line representing the "Owner" of that task, matching the color coding used in the Participants section."
 
 3. **Deployment recommendation**  
-  "Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
+   "Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
 
-  Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
+   Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
 
-  Project Specifications:
-  -Backend: Python (FastAPI). Critical Requirement: Must support long-running requests for OpenAI/Whisper processing without triggering 504 Gateway Timeouts.
-  -Frontend: React (Vite).
-  -Database: MongoDB Atlas (Cloud-hosted).
-  -Security: Requires secure Environment Variable management for OpenAI API keys.
+   Project Specifications:
+   -Backend: Python (FastAPI). Critical Requirement: Must support long-running requests for OpenAI/Whisper processing without triggering 504 Gateway Timeouts.
+   -Frontend: React (Vite).
+   -Database: MongoDB Atlas (Cloud-hosted).
+   -Security: Requires secure Environment Variable management for OpenAI API keys.
 
-  Evaluation Criteria:
-  -Deployment Velocity: Must be deployable within a 2-hour window.
-  -Cost Efficiency: Priority for Free Tier or "Pay-as-you-go" hobby tiers.
-  -Simplicity: Prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
-  -Reliability: The architecture must ensure the connection stays open or provide a workaround (like background tasks) for AI processing times.
-  "
+   Evaluation Criteria:
+   -Deployment Velocity: Must be deployable within a 2-hour window.
+   -Cost Efficiency: Priority for Free Tier or "Pay-as-you-go" hobby tiers.
+   -Simplicity: Prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
+   -Reliability: The architecture must ensure the connection stays open or provide a workaround (like background tasks) for AI processing times.
+   "
 
 ### 2.2 LLM system prompt for meeting summary (full template + why)
 The backend builds one user message per request in `summarize.py` (`_make_prompt`). The model sees this text (placeholders: **`TRANSCRIPT_LANGUAGE`** is inferred from the transcript, e.g. English or Spanish; the real **`### Transcript`** block ends with the full transcript text). Full prompt template:
@@ -187,15 +188,15 @@ Example: if the narrator says "my brother Tom attends every meeting", Tom is NOT
 ```
 
 #### Why it is built this way
-| Choice | Reason |
-|--------|--------|
-| **JSON-only, fixed schema** | Matches `ProcessResponse` / Pydantic on the server: easy to validate, cache, and render in the UI or DOCX without fragile prose parsing. |
-| **No markdown / no extra keys** | Stops the model from wrapping output in fenced code blocks or adding fields that would break strict parsing. |
-| **Language block** | Summaries stay in the same language as the meeting so the UI does not flip languages by accident. |
+| Choice                         | Reason                                                                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **JSON-only, fixed schema**    | Matches `ProcessResponse` / Pydantic on the server: easy to validate, cache, and render in the UI or DOCX without fragile prose parsing. |
+| **No markdown / no extra keys** | Stops the model from wrapping output in fenced code blocks or adding fields that would break strict parsing.                          |
+| **Language block**             | Summaries stay in the same language as the meeting so the UI does not flip languages by accident.                                      |
 | **Speaker rules + participant filtering** | Whisper gives plain text, not diarization; explicit rules reduce “ghost” participants and people who are only mentioned but never speak. |
-| **Action owner = doer** | Avoids a common bug: setting owner to “Dan” for “I will call Dan” when the assignee is the speaker, not Dan. |
-| **Decisions only if explicit** | Reduces hallucinated decisions; empty list is acceptable. |
-| **Integrity checklist at the end** | Repetition helps compliance before the long transcript. |
+| **Action owner = doer**        | Avoids a common bug: setting owner to “Dan” for “I will call Dan” when the assignee is the speaker, not Dan.                           |
+| **Decisions only if explicit** | Reduces hallucinated decisions; empty list is acceptable.                                                                              |
+| **Integrity checklist at the end** | Repetition helps compliance before the long transcript.                                                                              |
 
 ---
 
@@ -224,23 +225,25 @@ That would cost more engineering and often more API usage, but it is the right f
 ---
 
 ## 4. How long it actually took
-Backend (upload, transcribe, summarize, cache) - ~3 h 
-Frontend (upload UI, results) - ~2 h 
-Extra (authentication, users, deploy) - ~1 h 
-**Total (approx.)** - **~6 h** 
+| Area | Time |
+| ---- | ---- |
+| Backend (upload, transcribe, summarize, cache) | ~3 h |
+| Frontend (upload UI, results) | ~2 h |
+| Extra (authentication, users, deploy) | ~1 h |
+| **Total (approx.)** | **~6 h** |
 
 ---
 
 ## 5. Backlog: ideas to make EchoBrief better
 This is a **living list** of improvements.
 
-**Docker** (backend image, optional `compose` for API + dependencies later) - Same Python and deps everywhere; easier onboarding, CI, and deploy paths that expect containers. 
-**Speaker diarization** - True “who said what” per time segment instead of inferring speakers from one flat transcript; better participants, quotes, and action-item attribution. 
-**Transcript UX** - Timestamps, per-speaker lines (once diarization exists), optional audio player with seek-to-segment. 
-**Exports** - PDF or other formats alongside DOCX if users ask for them. 
-**Observability** - Structured logging and error reporting so production issues are diagnosable without guessing. 
-**a11y / polish** - Keyboard flow, focus, labels—makes the app usable for more people and often improves quality for everyone. 
-**HttpOnly session cookies** - After Google sign-in, verify the ID token once on the API, then issue a server session in an `HttpOnly; Secure` cookie instead of keeping the token in `sessionStorage` and sending `Authorization: Bearer`. Frontend uses `fetch` with `credentials: 'include'`; Render CORS must allow the Vercel origin with credentials (and `SameSite=None; Secure` on the cookie while the app and API are on different registrable domains). Optional: align `app.` + `api.` under one domain to simplify SameSite. Fine to defer past the demo; worth doing before treating auth as production-hardened.
+- **Docker** (backend image, optional `compose` for API + dependencies later) - Same Python and deps everywhere; easier onboarding, CI, and deploy paths that expect containers. 
+- **Speaker diarization** - True “who said what” per time segment instead of inferring speakers from one flat transcript; better participants, quotes, and action-item attribution. 
+- **Transcript UX** - Timestamps, per-speaker lines (once diarization exists), optional audio player with seek-to-segment. 
+- **Exports** - PDF or other formats alongside DOCX if users ask for them. 
+- **Observability** - Structured logging and error reporting so production issues are diagnosable without guessing. 
+- **a11y / polish** - Keyboard flow, focus, labels—makes the app usable for more people and often improves quality for everyone. 
+- **HttpOnly session cookies** - After Google sign-in, verify the ID token once on the API, then issue a server session in an `HttpOnly; Secure` cookie instead of keeping the token in `sessionStorage` and sending `Authorization: Bearer`. Frontend uses `fetch` with `credentials: 'include'`; Render CORS must allow the Vercel origin with credentials (and `SameSite=None; Secure` on the cookie while the app and API are on different registrable domains). Optional: align `app.` + `api.` under one domain to simplify SameSite. Fine to defer past the demo; worth doing before treating auth as production-hardened.
 
 ---
 

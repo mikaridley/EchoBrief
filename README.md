@@ -4,14 +4,16 @@ EchoBrief turns a meeting recording into a structured brief: **transcript**, **s
 
 **Live demo:** [https://echo-brief-demo.vercel.app/](https://echo-brief-demo.vercel.app/)
 
+**Demo uploads:** File upload is only available after the maintainer grants you access (allowlist / quota). If you need to try uploads on the hosted demo, contact the repository owner.
+
 ---
 
 ## What’s in the repo
 
-| Part | Stack | Role |
-|------|--------|------|
-| `frontend/` | React 19, Vite 8, TypeScript | Upload UI, Google sign-in, results |
-| `backend/` | FastAPI, OpenAI (Whisper + chat) | Transcribe, summarize, auth, quotas, DOCX |
+| Part        | Stack                         | Role                                      |
+| ----------- | ----------------------------- | ----------------------------------------- |
+| `frontend/` | React 19, Vite 8, TypeScript  | Upload UI, Google sign-in, results        |
+| `backend/`  | FastAPI, OpenAI (Whisper + chat) | Transcribe, summarize, auth, quotas, DOCX |
 
 ---
 
@@ -106,11 +108,11 @@ Open the URL Vite prints (usually [http://localhost:5173](http://localhost:5173)
 
 ### Useful commands
 
-| Where | Command | Purpose |
-|--------|---------|---------|
-| `frontend/` | `npm run build` | Production build (output in `dist/`) |
-| `frontend/` | `npm run lint` | ESLint |
-| `backend/` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Typical production-style start (e.g. on Render) |
+| Where       | Command                                              | Purpose                                                |
+| ----------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| `frontend/` | `npm run build`                                      | Production build (output in `dist/`)                   |
+| `frontend/` | `npm run lint`                                       | ESLint                                                 |
+| `backend/`  | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Typical production-style start (e.g. on Render)        |
 
 ---
 
@@ -132,6 +134,5 @@ Never commit real `.env` files or API keys. The repo should rely on examples plu
 
 ## Contributing / learning
 
-Numbered phase plans live under [`plan/`](plan/) (ordering described in [`plan/the-process-for-me.md`](plan/the-process-for-me.md) if present). Use them if you extend the pipeline (e.g. diarization, exports, observability).
-
-If something in this README drifts from the code, trust the repo and `.env.example` files first, then update the README in the same PR.
+- Numbered phase plans live under [`plan/`](plan/) (ordering described in [`plan/the-process-for-me.md`](plan/the-process-for-me.md) if present). Use them if you extend the pipeline (e.g. diarization, exports, observability).
+- If something in this README drifts from the code, trust the repo and `.env.example` files first, then update the README in the same PR.
