@@ -52,77 +52,81 @@ Splitting into routes / services / schemas makes testing easier, makes it possib
 ## 2. How I used AI during development
 
 ### 2.1 Cursor / coding assistant (example prompts)
-Prompt Examples:
 
-1. **Frontend skeleton**  
-   **Role:** Expert React & Frontend Architect.
+Each block below is a single fenced code box (same pattern as the meeting-summary template in §2.2): easy to select and copy in Cursor or on GitHub.
 
-   **Task:** Initialize a React frontend using Vite and a modular CSS layout.
+#### 1. Frontend skeleton
 
-   **Stack:** React (Vite), modular CSS. Empty folders should include `.gitkeep` where needed. In `main.css`, import everything under `setup/`, `basics/`, `cmps/`, and `pages/` so styles have one entry point.
+```
+Role: Expert React & Frontend Architect.
 
-   **Target `src/` tree** (fenced `text` block keeps monospace alignment in Cursor and on GitHub):
+Task: Initialize a React frontend using Vite and a modular CSS layout.
 
-   ```text
-   src/
-   ├── assets/
-   │   ├── fonts/
-   │   ├── imgs/
-   │   └── styles/
-   │       ├── basics/
-   │       │   ├── base.css
-   │       │   └── layout.css
-   │       ├── cmps/
-   │       ├── pages/
-   │       ├── setup/
-   │       │   ├── _mq.css
-   │       │   ├── _typography.css
-   │       │   └── _variables.css
-   │       └── main.css
-   ├── cmps/
-   ├── config/
-   ├── pages/
-   ├── services/
-   ├── utils/
-   ├── index.jsx
-   └── RootCmp.jsx
-   ```
+Stack: React (Vite), modular CSS. Empty folders should include .gitkeep where needed. In main.css, import everything under setup/, basics/, cmps/, and pages/ so styles have one entry point.
 
-2. **Data-to-UI Mapping Specification**  
-   "Role: Expert Frontend Developer and UI/UX Designer.
+Target src/ tree:
 
-   Task: Transform a JSON data object into a clean, modern, and interactive user interface. You must map specific data fields to the following UI components while maintaining a professional aesthetic:
+src/
+├── assets/
+│   ├── fonts/
+│   ├── imgs/
+│   └── styles/
+│       ├── basics/
+│       │   ├── base.css
+│       │   └── layout.css
+│       ├── cmps/
+│       ├── pages/
+│       ├── setup/
+│       │   ├── _mq.css
+│       │   ├── _typography.css
+│       │   └── _variables.css
+│       └── main.css
+├── cmps/
+├── config/
+├── pages/
+├── services/
+├── utils/
+├── index.jsx
+└── RootCmp.jsx
+```
 
-   Summary (Priority 1): Display the summary data at the very top of the page. It should be formatted as a high-readability paragraph to serve as the executive overview.
+#### 2. Data-to-UI mapping specification
 
-   Transcript (Collapsible): Create a section titled "Transcript." This must be a collapsible accordion that is closed by default. Include a chevron/arrow icon that points up when closed and rotates when clicked to reveal the full text.
+```
+Role: Expert Frontend Developer and UI/UX Designer.
 
-   Participants (Visual Icons): Map the participants data to a horizontal row of rounded avatar divs:
-   Each div should contain a person icon.
-   Assign a unique, distinct background color to each participant.
-   Implement a hover state/tooltip that displays the participant’s full name.
+Task: Transform a JSON data object into a clean, modern, and interactive user interface. You must map specific data fields to the following UI components while maintaining a professional aesthetic:
 
-   Decisions: List all items from the decisions field as a clean bulleted list under a clear "Decisions" heading.
+Summary (Priority 1): Display the summary data at the very top of the page. It should be formatted as a high-readability paragraph to serve as the executive overview.
 
-   Action Items (Ownership): List items from the action_items field as bullets. For each item, append a small rounded icon at the end of the line representing the "Owner" of that task, matching the color coding used in the Participants section."
+Transcript (Collapsible): Create a section titled "Transcript." This must be a collapsible accordion that is closed by default. Include a chevron/arrow icon that points up when closed and rotates when clicked to reveal the full text.
 
-3. **Deployment recommendation**  
-   "Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
+Participants (Visual Icons): Map the participants data to a horizontal row of rounded avatar divs. Each div should contain a person icon. Assign a unique, distinct background color to each participant. Implement a hover state/tooltip that displays the participant's full name.
 
-   Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
+Decisions: List all items from the decisions field as a clean bulleted list under a clear "Decisions" heading.
 
-   Project Specifications:
-   -Backend: Python (FastAPI). Critical Requirement: Must support long-running requests for OpenAI/Whisper processing without triggering 504 Gateway Timeouts.
-   -Frontend: React (Vite).
-   -Database: MongoDB Atlas (Cloud-hosted).
-   -Security: Requires secure Environment Variable management for OpenAI API keys.
+Action Items (Ownership): List items from the action_items field as bullets. For each item, append a small rounded icon at the end of the line representing the "Owner" of that task, matching the color coding used in the Participants section.
+```
 
-   Evaluation Criteria:
-   -Deployment Velocity: Must be deployable within a 2-hour window.
-   -Cost Efficiency: Priority for Free Tier or "Pay-as-you-go" hobby tiers.
-   -Simplicity: Prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
-   -Reliability: The architecture must ensure the connection stays open or provide a workaround (like background tasks) for AI processing times.
-   "
+#### 3. Deployment recommendation
+
+```
+Role: Cloud Infrastructure Architect and Senior DevOps Engineer.
+
+Task: Recommend the most efficient, cost-effective, and reliable deployment strategy for a Full Stack "take-home" assignment. The solution must prioritize speed of setup and handle specific technical constraints without the overhead of complex enterprise providers (AWS/GCP/Azure).
+
+Project specifications:
+- Backend: Python (FastAPI). Critical requirement: must support long-running requests for OpenAI/Whisper processing without triggering 504 gateway timeouts.
+- Frontend: React (Vite).
+- Database: MongoDB Atlas (cloud-hosted).
+- Security: requires secure environment variable management for OpenAI API keys.
+
+Evaluation criteria:
+- Deployment velocity: must be deployable within a 2-hour window.
+- Cost efficiency: priority for free tier or pay-as-you-go hobby tiers.
+- Simplicity: prefer Platform-as-a-Service (PaaS) solutions over manual VPS or Kubernetes management.
+- Reliability: the architecture must keep the connection open or provide a workaround (for example background tasks) for AI processing times.
+```
 
 ### 2.2 LLM system prompt for meeting summary (full template + why)
 The backend builds one user message per request in `summarize.py` (`_make_prompt`). The model sees this text (placeholders: **`TRANSCRIPT_LANGUAGE`** is inferred from the transcript, e.g. English or Spanish; the real **`### Transcript`** block ends with the full transcript text). Full prompt template:
