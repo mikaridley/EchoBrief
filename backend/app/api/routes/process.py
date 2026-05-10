@@ -12,10 +12,16 @@ from fastapi.concurrency import run_in_threadpool
 
 from ...core.auth import AuthedUser, consume_summary_quota
 from ...core.cache_io import read_json_dict_safe, write_json_atomic
-from ...core.config import get_settings
+from ...core.config import Settings, get_settings
 from ...core.paths import resolve_backend_path
 from ...schemas.meeting import ActionItem, ProcessResponse
-from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
+from ...services import (
+    SummarizationError,
+    SummaryResult,
+    TranscriptionError,
+    summarize_transcript,
+    transcribe_audio,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +30,55 @@ router = APIRouter()
 
 ALLOWED_EXTS = {'.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'}
 _recent_transcribe_calls: list[float] = []
+
+
+def _raise_http_for_transcription_error(exc: TranscriptionError, *, max_upload_mb: int) -> None:
+    e = exc
+    if e.code == 'unsupported_format':
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if e.code == 'file_too_large':
+        raise HTTPException(
+            status_code=413,
+            detail=f'File too large. Max is {max_upload_mb}MB',
+        ) from e
+    if e.code == 'file_unreadable':
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if e.code == 'timeout':
+        raise HTTPException(status_code=504, detail=str(e)) from e
+    if e.code == 'auth_failed':
+        raise HTTPException(
+            status_code=502,
+            detail=f'{str(e)}. Check OPENAI_API_KEY',
+        ) from e
+    if e.code == 'rate_limited':
+        if e.provider_message:
+            raise HTTPException(status_code=429, detail=e.provider_message) from e
+        raise HTTPException(status_code=429, detail=str(e)) from e
+    if e.provider_message is not None:
+        raise HTTPException(status_code=502, detail=e.provider_message or str(e)) from e
+    raise HTTPException(status_code=502, detail=f'{e.code}: {str(e)}') from e
+
+
+async def _summarize_transcript_or_http(settings: Settings, transcript: str) -> SummaryResult:
+    try:
+        return await run_in_threadpool(
+            summarize_transcript,
+            transcript=transcript,
+            openai_api_key=settings.openai_api_key,
+            model=settings.openai_summarize_model,
+            timeout_sec=settings.openai_timeout_sec,
+            cache_dir=settings.summarization_cache_dir,
+            max_calls_per_min=(
+                settings.summarization_max_calls_per_min if settings.is_local else 10**9
+            ),
+            prompt_version=settings.summarization_prompt_version,
+            retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
+            rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
+        )
+    except SummarizationError as e:
+        if e.code == 'local_rate_limited':
+            raise HTTPException(status_code=429, detail=str(e)) from e
+        raise HTTPException(status_code=502, detail=f'summarization_failed: {str(e)}') from e
 
 
 @router.post('/process', response_model=ProcessResponse)
@@ -81,31 +136,13 @@ async def process_audio(
                 summarize_model: str | None = None
 
                 if settings.summarization_enabled:
-                    try:
-                        sr = await run_in_threadpool(
-                            summarize_transcript,
-                            transcript=tr_text,
-                            openai_api_key=settings.openai_api_key,
-                            model=settings.openai_summarize_model,
-                            timeout_sec=settings.openai_timeout_sec,
-                            cache_dir=settings.summarization_cache_dir,
-                            max_calls_per_min=(
-                                settings.summarization_max_calls_per_min if settings.is_local else 10**9
-                            ),
-                            prompt_version=settings.summarization_prompt_version,
-                            retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
-                            rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
-                        )
-                        summary = sr.summary
-                        participants = sr.participants
-                        decisions = sr.decisions
-                        action_items = sr.action_items
-                        summarize_cached = sr.cached
-                        summarize_model = sr.model
-                    except SummarizationError as e:
-                        if e.code == 'local_rate_limited':
-                            raise HTTPException(status_code=429, detail=str(e)) from e
-                        raise HTTPException(status_code=502, detail=f'summarization_failed: {str(e)}') from e
+                    sr = await _summarize_transcript_or_http(settings, tr_text)
+                    summary = sr.summary
+                    participants = sr.participants
+                    decisions = sr.decisions
+                    action_items = sr.action_items
+                    summarize_cached = sr.cached
+                    summarize_model = sr.model
 
                 return ProcessResponse(
                     transcript=tr_text,
@@ -157,29 +194,7 @@ async def process_audio(
                 timeout_sec=settings.openai_timeout_sec,
             )
         except TranscriptionError as e:
-            if e.code == 'unsupported_format':
-                raise HTTPException(status_code=400, detail=str(e)) from e
-            if e.code == 'file_too_large':
-                raise HTTPException(
-                    status_code=413,
-                    detail=f'File too large. Max is {settings.max_upload_mb}MB',
-                ) from e
-            if e.code == 'file_unreadable':
-                raise HTTPException(status_code=400, detail=str(e)) from e
-            if e.code == 'timeout':
-                raise HTTPException(status_code=504, detail=str(e)) from e
-            if e.code == 'auth_failed':
-                raise HTTPException(
-                    status_code=502,
-                    detail=f'{str(e)}. Check OPENAI_API_KEY',
-                ) from e
-            if e.code == 'rate_limited':
-                if e.provider_message:
-                    raise HTTPException(status_code=429, detail=e.provider_message) from e
-                raise HTTPException(status_code=429, detail=str(e)) from e
-            if e.provider_message is not None:
-                raise HTTPException(status_code=502, detail=e.provider_message or str(e)) from e
-            raise HTTPException(status_code=502, detail=f'{e.code}: {str(e)}') from e
+            _raise_http_for_transcription_error(e, max_upload_mb=settings.max_upload_mb)
 
         write_json_atomic(
             cache_path,
@@ -200,31 +215,13 @@ async def process_audio(
                     detail='Missing OPENAI_API_KEY. Set it in backend/.env',
                 )
 
-            try:
-                sr = await run_in_threadpool(
-                    summarize_transcript,
-                    transcript=tr.transcript,
-                    openai_api_key=settings.openai_api_key,
-                    model=settings.openai_summarize_model,
-                    timeout_sec=settings.openai_timeout_sec,
-                    cache_dir=settings.summarization_cache_dir,
-                    max_calls_per_min=(
-                        settings.summarization_max_calls_per_min if settings.is_local else 10**9
-                    ),
-                    prompt_version=settings.summarization_prompt_version,
-                    retry_on_invalid_json=settings.summarization_retry_on_invalid_json,
-                    rewrite_on_language_mismatch=settings.summarization_rewrite_on_language_mismatch,
-                )
-                summary = sr.summary
-                participants = sr.participants
-                decisions = sr.decisions
-                action_items = sr.action_items
-                summarize_cached = sr.cached
-                summarize_model = sr.model
-            except SummarizationError as e:
-                if e.code == 'local_rate_limited':
-                    raise HTTPException(status_code=429, detail=str(e)) from e
-                raise HTTPException(status_code=502, detail=f'summarization_failed: {str(e)}') from e
+            sr = await _summarize_transcript_or_http(settings, tr.transcript)
+            summary = sr.summary
+            participants = sr.participants
+            decisions = sr.decisions
+            action_items = sr.action_items
+            summarize_cached = sr.cached
+            summarize_model = sr.model
 
         return ProcessResponse(
             transcript=tr.transcript,
