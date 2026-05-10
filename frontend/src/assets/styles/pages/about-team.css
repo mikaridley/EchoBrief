@@ -1,0 +1,20 @@
+.about-team {
+  display: grid;
+  justify-items: center;
+  gap: 1.5rem;
+
+  max-width: 700px;
+  margin-inline: auto;
+
+  .about-team__img {
+    inline-size: min(100%, 13rem);
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  p{
+    text-align: center;
+    font-size: 1.2rem;
+  }
+}
