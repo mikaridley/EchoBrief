@@ -5,7 +5,7 @@
 
 1. **Full transcript** of the recording  
 2. **Meeting summary**  
-3. **Participant list** (when the audio/transcript allows identifying them — best-effort, not true diarization unless you add it later)  
+3. **Participant list** (when the audio/transcript allows identifying them — best-effort)  
 4. **Decisions** that were made in the meeting  
 5. **Action items** (tasks to follow up on)  
 
@@ -27,7 +27,7 @@ Then I wrote the **pipeline** down clearly, step by step, so I always knew what 
 1. User uploads a file  
 2. Backend stores it **locally and temporarily**  
 3. Audio is sent to the **Whisper** API for transcription  
-4. Transcript text is passed to an **LLM** with a **structured system-style prompt**  
+4. Transcript text is passed to an **LLM - OpenAI** with a **structured system-style prompt**  
 5. **Processed JSON** is returned to the frontend  
 
 From there I split the work into layers and phases:
@@ -53,7 +53,7 @@ Splitting into routes / services / schemas makes testing easier, makes it possib
 
 ### 2.1 Cursor / coding assistant (example prompts)
 
-Each block below is a single fenced code box (same pattern as the meeting-summary template in §2.2): easy to select and copy in Cursor or on GitHub.
+Prompt examples:
 
 #### 1. Frontend skeleton
 
@@ -206,7 +206,7 @@ Example: if the narrator says "my brother Tom attends every meeting", Tom is NOT
 
 ## 3. Where I got stuck and how I fixed it
 *1) Too many (or wrong) participants*=
-**Problem:** The model sometimes listed more participants than there was, it couldnt distinguish well btween “someone who spoke” and “someone only mentioned.”
+**Problem:** The model sometimes listed more participants than there was, it couldnt distinguish well between “someone who spoke” and “someone only mentioned.”
 
 **What I did:** Tightened the summarization prompt and server-side rules (e.g. only people with spoken lines, filter absent or third-party mentions). That improved results a lot.
 
@@ -251,8 +251,7 @@ This is a **living list** of improvements.
 
 ---
 
-## Appendix: pointers in this repo
-- Technical overview (repo state): `plan/PROCESS.md`  
-- Numbered phase plans: `plan/01-*.md` through `plan/11-*.md` (order: `plan/the-process-for-me.md`)  
+## Appendix: pointers in this repo 
+- Numbered phase plans: `plan/01-*.md` through `plan/11-*.md` 
 
 ---
