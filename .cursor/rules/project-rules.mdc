@@ -18,7 +18,7 @@ Obey and notice these rules each time you answer.
 
 ## Planning
 - Use the **plan** folder to write down a plan for solving any task. This helps break down the task into smaller steps and explain your reasoning before providing the final answer.
-- Plan file names: **consecutive number** + **descriptive name**, e.g. `plan/001-add-theme-toggle.md`.
+- Plan file names: **two-digit phase order** + **descriptive name**, e.g. `plan/01-add-theme-toggle.md` (see `plan/PROCESS.md` for the ordered list).
 - Ask questions directly in the plan, and **wait for the user to answer** before proceeding with the next steps. This helps better understand the user's needs and provide a more accurate solution.
 
 ## CSS (cssLayer)
