@@ -20,6 +20,7 @@ from pathlib import Path
 from openai import OpenAI
 from pydantic import ValidationError
 
+from ..paths import resolve_backend_path
 from ..schemas.meeting import ActionItem
 
 
@@ -42,23 +43,6 @@ class SummarizationError(Exception):
     def __init__(self, message: str, *, code: str):
         super().__init__(message)
         self.code = code
-
-
-def _backend_root_dir() -> Path:
-    # .../backend/app/services/summarize.py -> .../backend
-    return Path(__file__).resolve().parents[2]
-
-
-def _resolve_cache_dir(cache_dir: str | Path) -> Path:
-    p = Path(cache_dir)
-    if p.is_absolute():
-        return p
-
-    parts = list(p.parts)
-    if parts and parts[0].lower() == 'backend':
-        parts = parts[1:]
-
-    return _backend_root_dir() / Path(*parts)
 
 
 def _normalize_transcript_for_cache(transcript: str) -> str:
@@ -366,7 +350,7 @@ def summarize_transcript(
         raise SummarizationError('Transcript is empty', code='empty_transcript')
 
     transcript_hash = _cache_key_for_transcript(transcript_clean)
-    cache_root = _resolve_cache_dir(cache_dir)
+    cache_root = resolve_backend_path(cache_dir)
     cache_path = cache_root / f'{transcript_hash}.json'
 
     file_data = _read_attempts_file(cache_path) if cache_path.exists() else None

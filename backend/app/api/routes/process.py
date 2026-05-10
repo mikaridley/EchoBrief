@@ -12,6 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi import Depends
 
 from ...core.config import get_settings
+from ...paths import resolve_backend_path
 from ...core.auth import consume_summary_quota, AuthedUser
 from ...services import SummarizationError, TranscriptionError, summarize_transcript, transcribe_audio
 from ...schemas.meeting import ActionItem, ProcessResponse
@@ -21,23 +22,6 @@ router = APIRouter()
 
 ALLOWED_EXTS = {'.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'}
 _recent_transcribe_calls: list[float] = []
-
-
-def _backend_root_dir() -> Path:
-    # .../backend/app/api/routes/process.py -> .../backend
-    return Path(__file__).resolve().parents[3]
-
-
-def _resolve_cache_dir(cache_dir: str) -> Path:
-    p = Path(cache_dir)
-    if p.is_absolute():
-        return p
-
-    parts = list(p.parts)
-    if parts and parts[0].lower() == 'backend':
-        parts = parts[1:]
-
-    return _backend_root_dir() / Path(*parts)
 
 
 @router.post('/process', response_model=ProcessResponse)
@@ -81,7 +65,7 @@ async def process_audio(
                 tmp.write(chunk)
 
         file_hash = sha.hexdigest()
-        cache_dir = _resolve_cache_dir(settings.transcription_cache_dir)
+        cache_dir = resolve_backend_path(settings.transcription_cache_dir)
         cache_path = cache_dir / f'{file_hash}.json'
         if cache_path.exists():
             cached = json.loads(cache_path.read_text(encoding='utf-8'))
